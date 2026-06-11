@@ -1,0 +1,79 @@
+/* DASHBOARD SCREEN (FULLSCREEN OVERLAY) */
+.game-container.dashboard-active {
+    background-image: url('https://images.unsplash.com/photo-1515687652280-bf0bb698562a?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); 
+    background-size: cover;
+    background-position: center;
+    background-color: transparent;
+    
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+/* TEXT STYLES (HELL) */
+.casino-title { 
+    margin-top: 15px; 
+    font-size: 2.5em; 
+    color: #ffffff; /* Strahlendes Weiß */
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    font-weight: bold;
+}
+
+.casino-subtitle { 
+    color: #f5f6fa; /* Helles Off-White */
+    margin-bottom: 25px; 
+    font-weight: 500;
+    font-size: 1.1em;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* BUTTONS GRID */
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 10px;
+    background: rgba(0, 0, 0, 0.2); /* Dunkler Schutzfilter */
+    padding: 20px;
+    border-radius: 12px;
+    width: 400px;
+}
+
+.game-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #bdc3c7;
+    padding: 22px 10px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    background: #ffffff;
+    border-color: #3498db;
+}
+
+.coin-card {
+    background: #f1c40f;
+    color: #2c3e50;
+    border-color: #f39c12;
+}
+
+.coin-card:hover {
+    background: #f39c12;
+}

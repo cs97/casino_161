@@ -1,0 +1,97 @@
+/* GLOBAL CORE STYLES */
+body {
+    background-image: url('https://images.unsplash.com/photo-1506968430777-bf7784a87f23?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.game-container {
+    position: relative;
+    text-align: center;
+    background-image: url('https://images.unsplash.com/photo-1645366188121-2a19e02fcbd5?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-position: center;
+    background-clip: padding-box; 
+    background-color: rgba(255, 255, 255, 0.2);
+    background-blend-mode: overlay;
+    padding: 70px 25px 30px 25px;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    width: 460px;
+    min-height: 520px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: background 0.3s, box-shadow 0.3s, border 0.3s;
+}
+
+/* TOP BAR SYSTEM */
+.top-bar {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10; /* Bleibt über Vollbild-Hintergründen sichtbar */
+}
+
+.nav-home-btn {
+    background: #34495e;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background 0.2s;
+}
+
+.nav-home-btn:hover {
+    background: #2c3e50;
+}
+
+.top-right-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.balance-display {
+    background: #32cd32; /* Knackiges Limettengrün */
+    color: white;
+    padding: 5px 14px;
+    border-radius: 5px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.nav-dropdown {
+    background: #34495e; /* Gleiches Design wie Home-Button */
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background 0.2s;
+}
+
+.nav-dropdown:hover {
+    background: #2c3e50;
+}
+
+/* TEXTE & STATISCHE SEITEN */
+.static-page {
+    padding: 30px 10px;
+    color: #2c3e50;
+}

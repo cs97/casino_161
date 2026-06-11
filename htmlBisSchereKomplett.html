@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino 161</title>
+    
+    <link rel="stylesheet" href="styles/main.css">
+    
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <link rel="stylesheet" href="styles/coinflip.css">
+    <link rel="stylesheet" href="styles/russianroulette.css">
+    <link rel="stylesheet" href="styles/rockpaperscissors.css">
+</head>
+<body>
+
+    <div id="elm-app"></div>
+
+    <script src="main.js"></script>
+    
+    <script>
+        // Startet die Elm-App und hängt sie an den entsprechenden DIV-Container
+        var app = Elm.Main.init({
+            node: document.getElementById('elm-app')
+        });
+    </script>
+
+</body>
+</html>

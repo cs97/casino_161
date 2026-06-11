@@ -1,0 +1,106 @@
+/* ==========================================================================
+   NEW GAME: RUSSIAN ROULETTE STYLES
+   ========================================================================== */
+
+/* Spezieller Button auf dem Dashboard */
+.game-grid .roulette-card {
+    background: #e74c3c;
+    color: white;
+    border-color: #c0392b;
+}
+.game-grid .roulette-card:hover {
+    background: #c0392b;
+    border-color: #e74c3c;
+}
+
+/* Status-Anzeige-Box */
+.roulette-status {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+/* Signalisiert dem Spieler optisch, dass er jetzt drücken MUSS */
+.roulette-status.status-player-active {
+    background: #f1c40f;
+    color: #2c3e50;
+    box-shadow: 0 0 12px rgba(241, 196, 15, 0.6);
+}
+
+/* Die runde Arena, in der die Waffe liegt */
+.roulette-stage {
+    width: 180px;
+    height: 180px;
+    margin: 25px auto;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px dashed rgba(255, 255, 255, 0.3);
+    position: relative;
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* Der Container der Waffe, der rotiert (0 Grad = oben, 180 Grad = unten) */
+.revolver-container {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.revolver-body {
+    font-size: 65px;
+    line-height: 1;
+    z-index: 2;
+}
+
+/* Roter Richtungs-Pfeil über dem Lauf der Waffe */
+.revolver-barrel {
+    position: absolute;
+    top: -12px;
+    font-size: 18px;
+    color: #e74c3c;
+    text-shadow: 0 0 6px rgba(231, 76, 60, 0.8);
+}
+
+/* Animation beim Schießen (leichtes Rückstoß-Zittern) */
+.revolver-shooting {
+    animation: kickback 0.15s ease-in-out infinite alternate;
+}
+
+@keyframes kickback {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(5px) scale(0.95); }
+}
+
+/* Die Aktions-Buttons für das Roulette */
+.roulette-btn-fire {
+    background: #e74c3c !important;
+}
+.roulette-btn-fire:hover:not(:disabled) {
+    background: #c0392b !important;
+}
+.roulette-btn-fire:disabled {
+    background: #bdc3c7 !important;
+    color: #7f8c8d !important;
+    cursor: not-allowed;
+}
+
+.roulette-btn-reset {
+    background: #3498db !important;
+}
+.roulette-btn-reset:hover {
+    background: #2980b9 !important;
+}

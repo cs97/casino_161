@@ -1,0 +1,78 @@
+module Components.RussianRoulette exposing (RouletteState(..), RouletteTurn(..), view)
+
+import Html exposing (Html, button, div, h2, p, text)
+import Html.Attributes exposing (class, classList, disabled, style)
+import Html.Events exposing (onClick)
+
+
+type RouletteTurn
+    = PlayerTurn
+    | DealerTurn
+
+
+type RouletteState
+    = RouletteIdle
+    | RouletteFiring
+    | RouletteDead RouletteTurn
+    | RouletteWon
+
+
+view :
+    { rouletteState : RouletteState, rouletteTurn : RouletteTurn, rouletteRotation : Int, currentShot : Int }
+    -> msg
+    -> msg
+    -> Html msg
+view model onPullTrigger onStartGame =
+    let
+        isPlayer = model.rouletteTurn == PlayerTurn
+        isFiring = model.rouletteState == RouletteFiring
+        
+        statusMessage = 
+            case model.rouletteState of
+                RouletteIdle -> 
+                    if isPlayer then "DU BIST DRAN! Betätige den Abzug..." else "GEGNER IST DRAN! Er zielt..."
+                RouletteFiring ->
+                    "*Klick*..."
+                RouletteDead PlayerTurn ->
+                    "💥 BAMM! Du wurdest getroffen!"
+                RouletteDead DealerTurn ->
+                    "💥 BAMM! Der Gegner wurde getroffen!"
+                RouletteWon ->
+                    "🎉 DER GEGNER WURDE GETROFFEN!"
+
+        showResetButton = 
+            case model.rouletteState of
+                RouletteDead _ -> True
+                RouletteWon -> True
+                _ -> False
+    in
+    div []
+        [ h2 [] [ text "🔫 Russisch Roulette" ]
+        , p [] [ text ("Schuss-Zähler: " ++ String.fromInt model.currentShot ++ " / 6") ]
+        
+        -- Dynamisches Statusfeld
+        , div [ classList [ ( "roulette-status", True ), ( "status-player-active", isPlayer && model.rouletteState == RouletteIdle ) ] ]
+            [ text statusMessage ]
+            
+        -- Die Arena mit der rotierenden Waffe
+        , div [ class "roulette-stage" ]
+            [ div 
+                [ classList [ ( "revolver-container", True ), ( "revolver-shooting", isFiring ) ]
+                , style "transform" ("rotate(" ++ String.fromInt model.rouletteRotation ++ "deg)")
+                ]
+                [ div [ class "revolver-barrel" ] [ text "▲" ]
+                , div [ class "revolver-body" ] [ text "🔫" ]
+                ]
+            ]
+            
+        -- Abzugs- oder Resetbutton
+        , if showResetButton then
+            button [ class "btn action-btn roulette-btn-reset", onClick onStartGame ] [ text "Nochmal spielen (1000€)" ]
+          else
+            button 
+                [ class "btn action-btn roulette-btn-fire"
+                , onClick onPullTrigger
+                , disabled (not isPlayer || isFiring)
+                ] 
+                [ text (if isPlayer then "Trigger betätigen!" else "Warte auf Gegner...") ]
+        ]

@@ -2,13 +2,13 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (Html, button, div, h1, h2, text)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
 import Random
+import Time
 
 
 -- 1. MODEL
--- Wir definieren die möglichen Symbole und den Zustand des Spiels.
 
 type Symbol
     = Cherry
@@ -22,6 +22,8 @@ type alias Model =
     , slot3 : Symbol
     , credits : Int
     , message : String
+    , isSpinning : Bool    -- Läuft das Spiel gerade?
+    , spinTicks : Int      -- Zähler für die Animationsdauer
     }
 
 init : () -> ( Model, Cmd Msg )
@@ -31,6 +33,8 @@ init _ =
       , slot3 = Cherry
       , credits = 100
       , message = "Drücke auf Drehen! (Kostet 10 Credits)"
+      , isSpinning = False
+      , spinTicks = 0
       }
     , Cmd.none
     )
@@ -39,15 +43,14 @@ init _ =
 -- 2. UPDATE
 
 type Msg
-    = Spin
+    = StartSpin
+    | Tick Time.Posix
     | NewSlots ( Symbol, Symbol, Symbol )
 
--- Ein Zufallsgenerator für unsere Symbole
 symbolGenerator : Random.Generator Symbol
 symbolGenerator =
     Random.uniform Cherry [ Seven, Diamond, Lemon ]
 
--- Ein Generator, der drei Symbole gleichzeitig würfelt
 slotsGenerator : Random.Generator ( Symbol, Symbol, Symbol )
 slotsGenerator =
     Random.map3 (\s1 s2 s3 -> ( s1, s2, s3 ))
@@ -58,44 +61,73 @@ slotsGenerator =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Spin ->
-            if model.credits < 10 then
+        StartSpin ->
+            if model.isSpinning then
+                ( model, Cmd.none ) -- Ignorieren, wenn es schon läuft
+            else if model.credits < 10 then
                 ( { model | message = "Nicht genug Credits! Spiel vorbei." }, Cmd.none )
             else
-                -- Wir ziehen 10 Credits ab und starten den Zufallsgenerator
-                ( { model | credits = model.credits - 10, message = "Die Walzen laufen..." }
-                , Random.generate NewSlots slotsGenerator
+                ( { model
+                    | credits = model.credits - 10
+                    , message = "Die Walzen laufen..."
+                    , isSpinning = True
+                    , spinTicks = 0
+                  }
+                , Cmd.none
                 )
 
+        Tick _ ->
+            if model.spinTicks >= 10 then
+                -- Nach 10 Ticks (ca. 1 Sekunde) stoppen wir und holen das Endergebnis
+                ( model, Random.generate NewSlots slotsGenerator )
+            else
+                -- Während des Drehens würfeln wir ständig Zwischenergebnisse für den visuellen Effekt
+                ( { model | spinTicks = model.spinTicks + 1 }, Random.generate NewSlots slotsGenerator )
+
         NewSlots ( s1, s2, s3 ) ->
-            let
-                -- Gewinnberechnung
-                ( winAmount, msgText ) =
-                    if s1 == s2 && s2 == s3 then
-                        case s1 of
-                            Seven -> ( 100, "JACKPOT! 3 Siebenen! +100 Credits!" )
-                            Diamond -> ( 60, "Wow! 3 Diamanten! +60 Credits!" )
-                            Cherry -> ( 40, "Süß! 3 Kirschen! +40 Credits!" )
-                            Lemon -> ( 30, "Sauer bringt Geld! 3 Zitronen! +30 Credits!" )
-                    else if s1 == s2 || s2 == s3 || s1 == s3 then
-                        ( 15, "Paar! +15 Credits." )
-                    else
-                        ( 0, "Leider verloren. Versuch es noch einmal!" )
-            in
-            ( { model
-                | slot1 = s1
-                , slot2 = s2
-                , slot3 = s3
-                , credits = model.credits + winAmount
-                , message = msgText
-              }
-            , Cmd.none
-            )
+            if model.isSpinning && model.spinTicks < 10 then
+                -- Animation läuft noch: Nur Symbole wild austauschen
+                ( { model | slot1 = s1, slot2 = s2, slot3 = s3 }, Cmd.none )
+            else
+                -- Finale Auswertung
+                let
+                    ( winAmount, msgText ) =
+                        if s1 == s2 && s2 == s3 then
+                            case s1 of
+                                Seven -> ( 100, "JACKPOT! 3 Siebenen! +100 Credits!" )
+                                Diamond -> ( 60, "Wow! 3 Diamanten! +60 Credits!" )
+                                Cherry -> ( 40, "Süß! 3 Kirschen! +40 Credits!" )
+                                Lemon -> ( 30, "Sauer bringt Geld! 3 Zitronen! +30 Credits!" )
+                        else if s1 == s2 || s2 == s3 || s1 == s3 then
+                            ( 15, "Paar! +15 Credits." )
+                        else
+                            ( 0, "Leider verloren. Versuch es noch einmal!" )
+                in
+                ( { model
+                    | slot1 = s1
+                    , slot2 = s2
+                    , slot3 = s3
+                    , credits = model.credits + winAmount
+                    , message = msgText
+                    , isSpinning = False
+                  }
+                , Cmd.none
+                )
 
 
--- 3. VIEW
+-- 3. SUBSCRIPTIONS
+-- Hier sagen wir Elm, dass wir jede 100 Millisekunden ein Signal wollen, ABER NUR wenn die Walzen drehen.
 
--- Hilfsfunktion, um Symbole in Text/Emojis zu verwandeln
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    if model.isSpinning then
+        Time.every 100 Tick
+    else
+        Sub.none
+
+
+-- 4. VIEW
+
 symbolToString : Symbol -> String
 symbolToString symbol =
     case symbol of
@@ -108,45 +140,36 @@ view : Model -> Html Msg
 view model =
     div [ style "text-align" "center", style "font-family" "sans-serif", style "margin-top" "50px" ]
         [ h1 [] [ text "🎰 Elm Einarmiger Bandit 🎰" ]
-        
-        -- Anzeige der Credits
         , h2 [ style "color" "green" ] [ text ("Credits: " ++ String.fromInt model.credits) ]
         
-        -- Die Walzen (Slots)
-        , div [ style "font-size" "70px", style "margin" "30px", style "letter-spacing" "20px" ]
-            [ text (symbolToString model.slot1)
-            , text (symbolToString model.slot2)
-            , text (symbolToString model.slot3)
+        -- Die Walzenbox
+        , div [ style "display" "flex", style "justify-content" "center", style "gap" "20px", style "margin" "30px", style "font-size" "70px" ]
+            [ -- Walze 1 stoppt sofort am Ende
+              div [ class (if model.isSpinning then "blur-animation" else "") ] [ text (symbolToString model.slot1) ]
+              -- Walze 2 dreht gefühlt etwas länger
+            , div [ class (if model.isSpinning && model.spinTicks > 3 then "blur-animation" else "") ] [ text (symbolToString model.slot2) ]
+              -- Walze 3 dreht am längsten
+            , div [ class (if model.isSpinning && model.spinTicks > 6 then "blur-animation" else "") ] [ text (symbolToString model.slot3) ]
             ]
         
-        -- Der Hebel / Button
         , div []
             [ button
-                [ onClick Spin
-                , style "font-size" "24px"
-                , style "padding" "10px 30px"
-                , style "background-color" "#ff4757"
-                , style "color" "white"
-                , style "border" "none"
-                , style "border-radius" "5px"
-                , style "cursor" "pointer"
+                [ onClick StartSpin
+                , class (if model.isSpinning then "disabled-btn" else "spin-btn")
                 ]
-                [ text "DREHEN!" ]
+                [ text (if model.isSpinning then "Mische..." else "DREHEN!") ]
             ]
         
-        -- Nachricht an den Spieler
         , div [ style "margin-top" "30px", style "font-size" "18px", style "font-weight" "bold" ]
             [ text model.message ]
         ]
 
-
--- MAIN
 
 main : Program () Model Msg
 main =
     Browser.element
         { init = init
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         , view = view
         }

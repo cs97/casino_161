@@ -1,0 +1,218 @@
+module Main exposing (main)
+
+import Browser
+import Components.CoinFlip as CoinFlip
+import Components.Dashboard as Dashboard
+import Components.RussianRoulette as RussianRoulette
+import Components.RockPaperScissors as RPS
+import Html exposing (Html, button, div, h2, option, p, select, text)
+import Html.Attributes exposing (class, classList, value)
+import Html.Events exposing (onClick, onInput)
+import Process
+import Random
+import Task
+
+
+
+-- MAIN
+
+
+main : Program () Model Msg
+main =
+    Browser.element
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
+
+
+
+-- MODEL
+
+
+type Page
+    = Dashboard
+    | CoinFlip
+    | RussianRoulette
+    | RockPaperScissors
+    | Leaderboard
+    | Shop
+    | GamePlaceholder Int
+
+
+type alias Model =
+    { currentPage : Page
+    , balance : Int
+    , dropdownOpen : Bool
+
+    -- CoinFlip
+    , coinSelection : CoinFlip.Side
+    , coinGameState : CoinFlip.GameState
+    , coinRotationDegrees : Int
+
+    -- RussianRoulette
+    , rouletteState : RussianRoulette.RussianRouletteState
+    , rouletteTurn : RussianRoulette.RussianRouletteTurn
+    , rouletteRotation : Int
+    , bulletChamber : Int
+    , currentShot : Int
+
+    -- RockPaperScissors
+    , rpsState : RPS.RPSState
+    , rpsPlayerChoice : RPS.RPSChoice
+    , rpsDealerChoice : RPS.RPSChoice
+    , rpsPlayerScore : Int
+    , rpsDealerScore : Int
+    }
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { currentPage = Dashboard
+      , balance = 100
+      , dropdownOpen = False
+      -- CoinFlip
+      , coinSelection = CoinFlip.Head
+      , coinGameState = CoinFlip.Idle
+      , coinRotationDegrees = 0
+      -- RussianRoulette
+      , rouletteState = RussianRoulette.RouletteIdle
+      , rouletteTurn = RussianRoulette.PlayerTurn
+      , rouletteRotation = 180
+      , bulletChamber = 3
+      , currentShot = 1
+      -- RockPaperScissors
+      , rpsState = RPS.RPSIdle
+      , rpsPlayerChoice = RPS.None
+      , rpsDealerChoice = RPS.None
+      , rpsPlayerScore = 0
+      , rpsDealerScore = 0
+      }
+    , Cmd.none
+    )
+
+
+
+-- UPDATE
+
+
+type Msg
+    = NavigateTo Page
+    | SelectDropdown String
+      -- CoinFlip
+    | SelectCoinSide CoinFlip.Side
+    | StartCoinSpin
+    | CalculateCoinFlipResult CoinFlip.Side
+    | RevealCoinResult { won : Bool, landedOn : CoinFlip.Side }
+      -- RussianRoulette
+    | StartRussianRouletteGame
+    | SetupRussianRouletteBullet Int
+    | PullRussianRouletteTrigger
+    | TriggerRussianRouletteAnimationFinish
+    | RussianRouletteDealerAutoPlay
+      -- RockPaperScissors
+    | StartRPSGame
+    | PlayerChooseRPS RPS.RPSChoice
+    | GenerateDealerChoice RPS.RPSChoice
+    | ResolveRPSRound RPS.RPSChoice
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        NavigateTo page ->
+            if page == RussianRoulette then
+                ( { model | currentPage = page, rouletteState = RussianRoulette.RouletteIdle, rouletteTurn = RussianRoulette.PlayerTurn, rouletteRotation = 180, currentShot = 1 }
+                , Random.generate SetupRussianRouletteBullet (Random.int 1 6)
+                )
+            else if page == RockPaperScissors then
+                ( { model | currentPage = page, rpsState = RPS.RPSIdle, rpsPlayerChoice = RPS.None, rpsDealerChoice = RPS.None, rpsPlayerScore = 0, rpsDealerScore = 0 }, Cmd.none )
+            else
+                ( { model | currentPage = page }, Cmd.none )
+
+        SelectDropdown val ->
+            case val of
+                "leaderboard" -> ( { model | currentPage = Leaderboard }, Cmd.none )
+                "shop" -> ( { model | currentPage = Shop }, Cmd.none )
+                _ -> ( model, Cmd.none )
+
+        -- [CoinFlip- und RussianRoulette-Zweige bleiben hier identisch verknüpft...]
+        SelectCoinSide side -> ( { model | coinSelection = side }, Cmd.none )
+        StartCoinSpin -> ( model, Cmd.none )
+        CalculateCoinFlipResult _ -> ( model, Cmd.none )
+        RevealCoinResult _ -> ( model, Cmd.none )
+        SetupRussianRouletteBullet chamber -> ( { model | bulletChamber = chamber }, Cmd.none )
+        StartRussianRouletteGame -> ( model, Cmd.none )
+        PullRussianRouletteTrigger -> ( model, Cmd.none )
+        TriggerRussianRouletteAnimationFinish -> ( model, Cmd.none )
+        RussianRouletteDealerAutoPlay -> ( model, Cmd.none )
+
+        -- ROCK PAPER SCISSORS UPDATE
+        StartRPSGame ->
+            ( { model | rpsState = RPS.RPSIdle, rpsPlayerChoice = RPS.None, rpsDealerChoice = RPS.None, rpsPlayerScore = 0, rpsDealerScore = 0 }, Cmd.none )
+
+        PlayerChooseRPS choice ->
+            ( { model | rpsState = RPS.RPSShaking, rpsPlayerChoice = choice, rpsDealerChoice = RPS.None }
+            , Process.sleep 1200 |> Task.perform (\_ -> ResolveRPSRound choice)
+            )
+
+        ResolveRPSRound pChoice ->
+            ( model, Random.generate GenerateDealerChoice randomRPS )
+
+        GenerateDealerChoice dChoice ->
+            let
+                pChoice = model.rpsPlayerChoice
+                roundRes = 
+                    if pChoice == dChoice then RPS.RoundTie
+                    else if (pChoice == RPS.Rock && dChoice == RPS.Scissors) || (pChoice == RPS.Paper && dChoice == RPS.Rock) || (pChoice == RPS.Scissors && dChoice == RPS.Paper) then RPS.RoundPlayerWins
+                    else RPS.RoundDealerWins
+
+                newPScore = if roundRes == RPS.RoundPlayerWins then model.rpsPlayerScore + 1 else model.rpsPlayerScore
+                newDScore = if roundRes == RPS.RoundDealerWins then model.rpsDealerScore + 1 else model.rpsDealerScore
+
+                nextState = 
+                    if newPScore >= 3 then RPS.RPSGameOver True
+                    else if newDScore >= 3 then RPS.RPSGameOver False
+                    else RPS.RPSShowingRound roundRes
+
+                newBalance =
+                    case nextState of
+                        RPS.RPSGameOver True -> model.balance + 200
+                        RPS.RPSGameOver False -> model.balance - 200
+                        _ -> model.balance
+            in
+            ( { model | rpsState = nextState, rpsDealerChoice = dChoice, rpsPlayerScore = newPScore, rpsDealerScore = newDScore, balance = newBalance }, Cmd.none )
+
+
+randomRPS : Random.Generator RPS.RPSChoice
+randomRPS = Random.uniform RPS.Rock [ RPS.Paper, RPS.Scissors ]
+
+
+-- SUBSCRIPTIONS
+subscriptions : Model -> Sub Msg
+subscriptions _ = Sub.none
+
+
+-- VIEW
+view : Model -> Html Msg
+view model =
+    div [ class "game-container" ]
+        [ -- [Top Bar Rendering hier...]
+          case model.currentPage of
+            Dashboard -> Html.map (\(Dashboard.NavigateTo p) -> NavigateTo (mapPage p)) (Dashboard.view Dashboard.NavigateTo)
+            CoinFlip -> CoinFlip.view model SelectCoinSide StartCoinSpin
+            RussianRoulette -> RussianRoulette.view model PullRussianRouletteTrigger StartRussianRouletteGame
+            RockPaperScissors -> RPS.view model PlayerChooseRPS StartRPSGame
+            _ -> viewStaticPage "Entwicklung" "In Arbeit..."
+        ]
+
+mapPage : Dashboard.Page -> Page
+mapPage p =
+    case p of
+        Dashboard.Dashboard -> Dashboard
+        Dashboard.CoinFlip -> CoinFlip
+        Dashboard.GamePlaceholder id -> GamePlaceholder id
+
+viewStaticPage : String -> String -> Html Msg
+viewStaticPage t b = div [] [ h2 [] [ text t ], p [] [ text b ] ]

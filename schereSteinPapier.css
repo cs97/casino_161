@@ -1,0 +1,115 @@
+/* ==========================================================================
+   NEW GAME: ROCK PAPER SCISSORS STYLES
+   ========================================================================== */
+
+/* Button auf dem Dashboard */
+.game-grid .rps-card {
+    background: #9b59b6;
+    color: white;
+    border-color: #8e44ad;
+}
+.game-grid .rps-card:hover {
+    background: #8e44ad;
+    border-color: #9b59b6;
+}
+
+/* Scoreboard */
+.rps-scoreboard {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    color: white;
+}
+.score-box {
+    text-align: center;
+    min-width: 60px;
+}
+.score-box p { margin: 0; font-size: 0.8em; opacity: 0.8; }
+.score-box h1 { margin: 5px 0 0 0; font-size: 1.8em; color: #f1c40f; }
+.score-divider {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 0 20px;
+    opacity: 0.5;
+}
+
+/* Arena & Hände Modellierung */
+.rps-arena {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 25px 0;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 12px;
+}
+.rps-hand-wrapper {
+    text-align: center;
+    color: #2c3e50;
+    font-weight: bold;
+}
+.rps-hand-wrapper p { margin: 0 0 8px 0; font-size: 0.9em; }
+
+.rps-hand {
+    font-size: 70px;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+/* Spieler-Hand spiegeln, damit Fäuste aufeinander zeigen */
+.player-hand {
+    transform: scaleX(-1);
+}
+
+/* Rhythmisches Faust-Schütteln */
+.hand-shake {
+    animation: rockShake 0.4s ease-in-out infinite;
+}
+
+@keyframes rockShake {
+    0% { transform: scaleX(-1) translateY(0) rotate(0deg); }
+    50% { transform: scaleX(-1) translateY(-15px) rotate(-10deg); }
+    100% { transform: scaleX(-1) translateY(0) rotate(0deg); }
+}
+
+.dealer-hand.hand-shake {
+    animation: dealerShake 0.4s ease-in-out infinite;
+}
+
+@keyframes dealerShake {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(10deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* Auswahl-Buttons */
+.rps-choices {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+.rps-choice-btn {
+    flex: 1;
+    margin: 0 !important;
+    padding: 12px 5px !important;
+    background: white;
+    border: 2px solid #bdc3c7;
+    border-radius: 8px !important;
+}
+.rps-choice-btn:hover:not(:disabled) {
+    background: #3498db;
+    color: white;
+    border-color: #2980b9;
+}
+
+.rps-btn-reset {
+    background: #2ecc71 !important;
+}

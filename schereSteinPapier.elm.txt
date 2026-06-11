@@ -1,0 +1,97 @@
+module Components.RockPaperScissors exposing (RPSChoice(..), RPSRoundResult(..), RPSState(..), view)
+
+import Html exposing (Html, button, div, h1, h2, p, text)
+import Html.Attributes exposing (class, classList, disabled)
+import Html.Events exposing (onClick)
+
+
+type RPSChoice
+    = Rock
+    | Paper
+    | Scissors
+    | None
+
+
+type RPSRoundResult
+    = RoundTie
+    | RoundPlayerWins
+    | RoundDealerWins
+    | RoundNone
+
+
+type RPSState
+    = RPSIdle
+    | RPSShaking
+    | RPSShowingRound RPSRoundResult
+    | RPSGameOver Bool
+
+
+view :
+    { rpsState : RPSState, rpsPlayerChoice : RPSChoice, rpsDealerChoice : RPSChoice, rpsPlayerScore : Int, rpsDealerScore : Int }
+    -> (RPSChoice -> msg)
+    -> msg
+    -> Html msg
+view model onChooseRPS onStartGame =
+    let
+        isShaking = model.rpsState == RPSShaking
+        isGameOver = case model.rpsState of
+            RPSGameOver _ -> True
+            _ -> False
+
+        toEmoji choice shaking =
+            if shaking then "✊"
+            else
+                case choice of
+                    Rock -> "✊"
+                    Paper -> "✋"
+                    Scissors -> "✌️"
+                    None -> "❓"
+
+        statusText =
+            case model.rpsState of
+                RPSIdle -> "Wähle deine Hand! Wer zuerst 3 Punkte hat, gewinnt."
+                RPSShaking -> "Schere... Stein... Papier..."
+                RPSShowingRound RoundTie -> "Unentschieden in dieser Runde!"
+                RPSShowingRound RoundPlayerWins -> "Punkt für dich! 🎉"
+                RPSShowingRound RoundDealerWins -> "Punkt für den Gegner! 🤖"
+                RPSShowingRound RoundNone -> ""
+                RPSGameOver True -> "🏆 MATCH-SIEG! Du gewinnst 200€!"
+                RPSGameOver False -> "💀 MATCH-NIEDERLAGE! Du verlierst 200€."
+    in
+    div []
+        [ h2 [] [ text "✂️ Schere Stein Papier" ]
+        
+        -- Scoreboard
+        , div [ class "rps-scoreboard" ]
+            [ div [ class "score-box" ] [ p [] [ text "Du" ], h1 [] [ text (String.fromInt model.rpsPlayerScore) ] ]
+            , div [ class "score-divider" ] [ text "VS" ]
+            , div [ class "score-box" ] [ p [] [ text "Gegner" ], h1 [] [ text (String.fromInt model.rpsDealerScore) ] ]
+            ]
+
+        -- Status
+        , div [ class "roulette-status" ] [ text statusText ]
+
+        -- Arena
+        , div [ class "rps-arena" ]
+            [ div [ class "rps-hand-wrapper" ]
+                [ p [] [ text "Deine Hand" ]
+                , div [ classList [ ( "rps-hand player-hand", True ), ( "hand-shake", isShaking ) ] ] 
+                    [ text (toEmoji model.rpsPlayerChoice isShaking) ]
+                ]
+            , div [ class "rps-hand-wrapper" ]
+                [ p [] [ text "Gegner" ]
+                , div [ classList [ ( "rps-hand dealer-hand", True ), ( "hand-shake", isShaking ) ] ] 
+                    [ text (toEmoji model.rpsDealerChoice isShaking) ]
+                ]
+            ]
+
+        -- Interaktion
+        , if isGameOver then
+            button [ class "btn action-btn rps-btn-reset", onClick onStartGame ] [ text "Neues Match starten (200€)" ]
+          else
+            div [ class "rps-choices" ]
+                [ button [ class "btn rps-choice-btn", onClick (onChooseRPS Rock), disabled (isShaking) ] [ text "✊ Stein" ]
+                , button [ class "btn rps-choice-btn", onClick (onChooseRPS Paper), disabled (isShaking) ] [ text "✋ Papier" ]
+                , button [ class "btn rps-choice-btn", onClick (onChooseRPS Scissors), disabled (isShaking) ] [ text "✌️ Schere" ]
+                ]
+        ]

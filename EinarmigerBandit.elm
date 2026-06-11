@@ -138,12 +138,13 @@ symbolToString symbol =
 
 view : Model -> Html Msg
 view model =
-    div [ style "text-align" "center", style "font-family" "sans-serif", style "margin-top" "50px" ]
-        [ h1 [] [ text "🎰 Elm Einarmiger Bandit 🎰" ]
-        , h2 [ style "color" "green" ] [ text ("Credits: " ++ String.fromInt model.credits) ]
+    -- Hier aktivieren wir deinen CSS-Container
+    div [ class "game-container" ]
+        [ h1 [] [ text "🎰 Elm Bandit 🎰" ]
+        , h2 [ class "balance-display-text" ] [ text ("Credits: " ++ String.fromInt model.credits) ]
         
         -- Die Walzenbox
-        , div [ style "display" "flex", style "justify-content" "center", style "gap" "20px", style "margin" "30px", style "font-size" "70px" ]
+        , div [ style "display" "flex", style "justify-content" "center", style "gap" "20px", style "margin" "30px 0", style "font-size" "70px" ]
             [ -- Walze 1 stoppt sofort am Ende
               div [ class (if model.isSpinning then "blur-animation" else "") ] [ text (symbolToString model.slot1) ]
               -- Walze 2 dreht gefühlt etwas länger
@@ -160,7 +161,7 @@ view model =
                 [ text (if model.isSpinning then "Mische..." else "DREHEN!") ]
             ]
         
-        , div [ style "margin-top" "30px", style "font-size" "18px", style "font-weight" "bold" ]
+        , div [ style "margin-top" "30px", style "font-size" "18px", style "font-weight" "bold", style "color" "#fff" ]
             [ text model.message ]
         ]
 

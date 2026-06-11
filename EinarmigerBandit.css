@@ -1,0 +1,80 @@
+/* GLOBAL CORE STYLES */
+body {
+    background-image: url('https://images.unsplash.com/photo-1506968430777-bf7784a87f23?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Der eigentliche Automat */
+.game-container {
+    text-align: center;
+    /* Ein dunkler, edler Glas-Effekt, damit sich die Walzen abheben */
+    background: rgba(0, 0, 0, 0.65); 
+    backdrop-filter: blur(10px); /* Schickes Verschwimmen des Hintergrunds */
+    padding: 40px 30px;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    width: 450px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+h1 {
+    margin-top: 0;
+    font-size: 28px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.balance-display-text {
+    color: #32cd32; /* Knackiges Limettengrün */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    margin: 10px 0;
+}
+
+/* BUTTON STYLES */
+.spin-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+    transition: transform 0.1s, background 0.2s;
+}
+
+.spin-btn:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+.spin-btn:active {
+    transform: translateY(1px);
+}
+
+.disabled-btn {
+    background: #7f8c8d;
+    color: #bdc3c7;
+    border: none;
+    padding: 12px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: not-allowed;
+}
+
+/* Verschwommene Walzen während des Drehens */
+.blur-animation {
+    filter: blur(4px);
+    transform: scale(0.95);
+    transition: filter 0.1s ease-in-out;
+}

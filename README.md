@@ -17,3 +17,18 @@ curl -X POST http://127.0.0.1:3000/score/spieler1  -H "Content-Type: application
 ```
 curl http://127.0.0.1:3000/score/spieler1
 ```
+
+
+# build backen 
+```
+cd backend
+```
+```
+cargo build --release
+```
+```
+cd ..
+```
+```
+./backend/target/build/casino_backend
+```

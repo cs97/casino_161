@@ -2,11 +2,10 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Deine Elm Seite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meine Elm App</title>
     
-    <style>
-        /* Dein CSS aus Ellie */
-    </style>
+    <link rel="stylesheet" href="style.css">
     
     <script src="elm.js"></script>
 </head>
@@ -15,11 +14,15 @@
     <div id="elm-app"></div>
 
     <script>
-        // Elm-App auf der Seite starten
-        // Falls du Browser.sandbox oder Browser.element nutzt:
+        // Elm initialisieren
+        // (Nutzt du Browser.sandbox oder Browser.element)
         var app = Elm.Main.init({
             node: document.getElementById('elm-app')
         });
+        
+        // HINWEIS: Falls du im Elm-Code "Browser.document" oder "Browser.application" 
+        // nutzt, lösche die Zeilen mit "node: ..." und schreibe einfach nur:
+        // var app = Elm.Main.init();
     </script>
 </body>
 </html>

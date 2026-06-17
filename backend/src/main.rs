@@ -8,6 +8,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use tower_http::services::ServeDir;
 
 // Definition des gemeinsamen App-State
 type Db = Arc<RwLock<HashMap<String, i32>>>;
@@ -29,11 +30,14 @@ async fn main() {
     // Shared State initialisieren (In-Memory DB)
     let shared_state: Db = Arc::new(RwLock::new(HashMap::new()));
 
+	let serve_dir = ServeDir::new("static");
+
     // Routen definieren
     let app = Router::new()
         .route("/score/:username", get(get_score))
         .route("/score/:username", post(update_score))
-	.route("/ping", get(ping))
+		.route("/ping", get(ping))
+		.fallback_service(serve_dir)
         .with_state(shared_state);
 
     // Server starten

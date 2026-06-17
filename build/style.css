@@ -1,0 +1,367 @@
+body {
+    /* Ausgewählter rustikaler Holztisch */
+    background-image: url('https://images.unsplash.com/photo-1506968430777-bf7784a87f23?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.game-container {
+    position: relative;
+    text-align: center;
+    
+    /* Hintergrundbild (roter Filz) für die Spiele */
+    background-image: url('https://images.unsplash.com/photo-1645366188121-2a19e02fcbd5?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-position: center;
+    background-clip: padding-box; 
+    background-color: rgba(255, 255, 255, 0.2);
+    background-blend-mode: overlay;
+
+    padding: 70px 25px 30px 25px;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    width: 460px;
+    min-height: 520px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    /* Macht den Wechsel zwischen Startseite und Spiel schön geschmeidig */
+    transition: background 0.3s, box-shadow 0.3s, border 0.3s;
+}
+
+/* Wenn das Dashboard aktiv ist, Box auf Vollbild sprengen */
+.game-container.dashboard-active {
+    background-image: url('https://images.unsplash.com/photo-1515687652280-bf0bb698562a?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); 
+    background-size: cover;
+    background-position: center;
+    background-color: transparent;
+    
+    width: 100vw;       /* 100% der Bildschirmbreite */
+    height: 100vh;      /* 100% der Bildschirmhöhe */
+    max-width: 100%;
+    border-radius: 0;   /* Keine abgerundeten Ecken mehr */
+    box-shadow: none;   /* Kein Schatten für die Box */
+    border: none;       /* Kein Rand */
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+/* ==========================================
+   2. TOP BAR & NAVIGATION
+   ========================================== */
+
+.top-bar {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-home-btn {
+    background: #34495e;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background 0.2s;
+}
+.nav-home-btn:hover {
+    background: #2c3e50;
+}
+
+.top-right-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.balance-display {
+    background: #32cd32; /* Echtes, knackiges Limettengrün */
+    color: white;
+    padding: 5px 14px;
+    border-radius: 5px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.nav-dropdown {
+    background: #34495e;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background 0.2s;
+}
+.nav-dropdown:hover {
+    background: #2c3e50;
+}
+
+/* ==========================================
+   3. DASHBOARD GRID
+   ========================================== */
+
+.casino-title { 
+    margin-top: 15px; 
+    font-size: 2.5em; 
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    font-weight: bold;
+}
+
+.casino-subtitle { 
+    color: #f5f6fa;
+    margin-bottom: 25px; 
+    font-weight: 500;
+    font-size: 1.1em;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+    width: 400px;
+}
+
+.game-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #bdc3c7;
+    padding: 22px 10px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    background: #ffffff;
+    border-color: #3498db;
+}
+
+.coin-card {
+    background: #f1c40f;
+    color: #2c3e50;
+    border-color: #f39c12;
+}
+.coin-card:hover {
+    background: #f39c12;
+}
+
+/* ==========================================
+   4. ALLGEMEINE BUTTONS & COIN FLIP
+   ========================================== */
+
+.selection-zone {
+    margin: 20px 0;
+}
+
+.btn {
+    padding: 10px 20px;
+    margin: 0 5px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+.btn.active {
+    background: #4A90E2;
+    color: white;
+    border-color: #4A90E2;
+}
+
+.action-btn {
+    width: 100%;
+    background: #2ECC71;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+.action-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.coin-stage {
+    width: 150px;
+    height: 150px;
+    margin: 40px auto;
+    perspective: 1000px;
+}
+
+.coin {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.coin-side {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+}
+
+/* MONTE SPIELFELD & ANORDNUNG */
+.monte-table {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 260px;
+    margin: 30px auto;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    max-width: 600px;
+}
+
+/* DIE EINZELNE KARTE (Jetzt mit perfekter Flexbox-Zentrierung) */
+.monte-card-item {
+    font-size: 6rem;        /* Etwas größer für bessere Lesbarkeit */
+    line-height: 1;
+    min-width: 130px;
+    height: 200px;
+    margin: 0 15px;
+    border-radius: 12px;
+    border: 3px solid #fff;
+    background-color: #1e293b;
+    cursor: default;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    
+    /* NEU: Garantiert absolute Zentrierung des Symbols, padding entfernt */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0; 
+    
+    /* Unverändert: Deine perfekte Animationstransition */
+    transition: transform 1.0s ease-in-out, box-shadow 0.3s ease;
+}
+
+/* KARTENFARBEN BEIM REVEAL (Namen bleiben gleich, nur Farben angepasst) */
+.monte-card-item.card-red {
+    color: #dc2626;         /* Ein sattes Casino-Rot für die Lady */
+    background-color: #f8fafc;
+    border-color: #dc2626;
+}
+
+.monte-card-item.card-black {
+    color: #0f172a;         /* Tiefschwarz für die Asse */
+    background-color: #f8fafc;
+    border-color: #475569;
+}
+
+.monte-card-item.card-back {
+    color: #38bdf8;
+    background-color: #0f172a;
+    border-color: #38bdf8;
+}
+
+/* RATEMODUS: AKTIV AUSWÄHLBAR */
+.monte-card-item.clickable-guess {
+    cursor: pointer;
+}
+.monte-card-item.clickable-guess:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 0 20px #38bdf8;
+    border-color: #38bdf8;
+}
+
+
+/* ==========================================================================
+   DIE FLÜSSIGEN MISCH-ANIMATIONEN (Kein Teleportieren!)
+   Basiert auf den mathematischen Child-Positionen (1 = Links, 2 = Mitte, 3 = Rechts)
+   ========================================================================== */
+
+/* Abstands-Konstante: Da margin=15px und min-width=130px, 
+   beträgt der Abstand von Mitte-zu-Mitte genau 160px. */
+
+/* Zustand 0: Keine Bewegung */
+.monte-table.anim-none .monte-card-item {
+    transform: translate(0, 0);
+}
+
+/* Bewegung 1: Links und Mitte tauschen Plätze */
+.monte-table.anim-swap-left-middle .monte-card-item:nth-child(1) {
+    transform: translate(160px, 0);
+}
+.monte-table.anim-swap-left-middle .monte-card-item:nth-child(2) {
+    transform: translate(-160px, 0);
+}
+.monte-table.anim-swap-left-middle .monte-card-item:nth-child(3) {
+    transform: translate(0, 0); /* Bleibt ruhig stehen */
+}
+
+/* Bewegung 2: Mitte und Rechts tauschen Plätze */
+.monte-table.anim-swap-middle-right .monte-card-item:nth-child(1) {
+    transform: translate(0, 0); /* Bleibt ruhig stehen */
+}
+.monte-table.anim-swap-middle-right .monte-card-item:nth-child(2) {
+    transform: translate(160px, 0);
+}
+.monte-table.anim-swap-middle-right .monte-card-item:nth-child(3) {
+    transform: translate(-160px, 0);
+}
+
+/* Bewegung 3: Großer Tausch zwischen ganz Links und ganz Rechts */
+.monte-table.anim-swap-left-right .monte-card-item:nth-child(1) {
+    transform: translate(320px, 0);
+}
+.monte-table.anim-swap-left-right .monte-card-item:nth-child(2) {
+    transform: translate(0, 0); /* Mittlere Karte schaut nur zu */
+}
+.monte-table.anim-swap-left-right .monte-card-item:nth-child(3) {
+    transform: translate(-320px, 0);
+}
+
+/* Bewegung 4: Karussell (Alle drei rotieren im Uhrzeigersinn) */
+.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(1) {
+    transform: translate(160px, -25px); /* Rutscht auf die Mitte hoch */
+}
+.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(2) {
+    transform: translate(160px, 25px);  /* Rutscht nach rechts unten */
+}
+.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(3) {
+    transform: translate(-320px, 0);     /* Zieht flach ganz nach links rüber */
+}

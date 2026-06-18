@@ -289,6 +289,7 @@ type Msg
     | SelectDropdown String
       -- API Initialisierung
     | GotInitialScore (Result Http.Error Int)
+    | GotPostScoreResult (Result Http.Error Int) -- NEU: Für die Antwort des POST-Requests
       -- CoinFlip
     | SelectCoinSide Side
     | StartCoinSpin
@@ -334,7 +335,17 @@ update msg model =
                     ( { model | balance = initialScore }, Cmd.none )
 
                 Err _ ->
-                    -- Bei einem Fehler behalten wir den Standardwert von 100 bei
+                    ( model, Cmd.none )
+
+        GotPostScoreResult result ->
+            -- Hier fangen wir die API-Antwort nach dem Senden ab.
+            -- Falls die API den neuen Stand validiert zurückgibt, könnte man ihn hier setzen.
+            -- Im Fehlerfall machen wir aktuell nichts, um den Spielfluss nicht zu stören.
+            case result of
+                Ok aktuellerScoreVonApi ->
+                    ( { model | balance = aktuellerScoreVonApi }, Cmd.none )
+
+                Err _ ->
                     ( model, Cmd.none )
 
         NavigateTo page ->
@@ -419,7 +430,9 @@ update msg model =
                     else
                         model.balance - 10
             in
-            ( { model | coinGameState = Result resultData, balance = newBalance }, Cmd.none )
+            ( { model | coinGameState = Result resultData, balance = newBalance }
+            , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API
+            )
 
         -- RUSSIAN ROULETTE
         SetupRussianRouletteBullet chamber ->
@@ -444,10 +457,20 @@ update msg model =
             if model.currentShot == model.bulletChamber then
                 case model.rouletteTurn of
                     PlayerTurn ->
-                        ( { model | rouletteState = RouletteDead PlayerTurn, balance = model.balance - 1000 }, Cmd.none )
+                        let
+                            newBalance = model.balance - 1000
+                        in
+                        ( { model | rouletteState = RouletteDead PlayerTurn, balance = newBalance }
+                        , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API
+                        )
 
                     DealerTurn ->
-                        ( { model | rouletteState = RouletteWon, balance = model.balance + 1000 }, Cmd.none )
+                        let
+                            newBalance = model.balance + 1000
+                        in
+                        ( { model | rouletteState = RouletteWon, balance = newBalance }
+                        , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API
+                        )
 
             else
                 case model.rouletteTurn of
@@ -530,7 +553,12 @@ update msg model =
                         _ ->
                             model.balance
             in
-            ( { model | rpsState = nextState, rpsDealerChoice = dChoice, rpsPlayerScore = newPScore, rpsDealerScore = newDScore, balance = newBalance }, Cmd.none )
+            ( { model | rpsState = nextState, rpsDealerChoice = dChoice, rpsPlayerScore = newPScore, rpsDealerScore = newDScore, balance = newBalance }
+            , if newBalance /= model.balance then
+                postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (nur wenn sich die Balance geändert hat)
+              else
+                Cmd.none
+            )
 
         -- CARD MONTE
         StartMonteGame ->
@@ -578,7 +606,9 @@ update msg model =
                     else
                         model.balance - 20
             in
-            ( { model | monteState = MonteResult isCorrect, balance = newBalance }, Cmd.none )
+            ( { model | monteState = MonteResult isCorrect, balance = newBalance }
+            , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API
+            )
 
         -- SLOT MACHINE
         StartSlotSpin ->
@@ -589,13 +619,16 @@ update msg model =
                 ( { model | slotMessage = "Nicht genug Geld! Geh zurück zum Dashboard." }, Cmd.none )
 
             else
+                let
+                    newBalance = model.balance - 10
+                in
                 ( { model
-                    | balance = model.balance - 10
+                    | balance = newBalance
                     , slotMessage = "Die Walzen laufen..."
                     , slotIsSpinning = True
                     , slotSpinTicks = 0
                   }
-                , Cmd.none
+                , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (Einsatz abgebucht)
                 )
 
         SlotTick _ ->
@@ -631,16 +664,21 @@ update msg model =
 
                         else
                             ( 0, "Leider verloren. Versuch es noch einmal!" )
+                    
+                    newBalance = model.balance + winAmount
                 in
                 ( { model
                     | slot1 = s1
                     , slot2 = s2
                     , slot3 = s3
-                    , balance = model.balance + winAmount
+                    , balance = newBalance
                     , slotMessage = msgText
                     , slotIsSpinning = False
                   }
-                , Cmd.none
+                , if winAmount > 0 then 
+                    postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (Gewinn gutgeschrieben)
+                  else 
+                    Cmd.none
                 )
 
         -- BLACKJACK INTERACTION
@@ -693,8 +731,14 @@ update msg model =
                 ( { model | currentPage = Dashboard }, Cmd.none )
 
             else
-                ( { model | bjPlayerHand = [], bjDealerHand = [], bjState = BjPlayerTurn, balance = model.balance - 20 }
-                , Random.generate BjInitialDraw (Random.pair bjCardGenerator bjCardGenerator)
+                let
+                    newBalance = model.balance - 20
+                in
+                ( { model | bjPlayerHand = [], bjDealerHand = [], bjState = BjPlayerTurn, balance = newBalance }
+                , Cmd.batch 
+                    [ Random.generate BjInitialDraw (Random.pair bjCardGenerator bjCardGenerator)
+                    , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (Einsatz abgebucht)
+                    ]
                 )
 
 
@@ -738,8 +782,15 @@ updateDealer model =
 
                     _ ->
                         0
+            
+            newBalance = model.balance + payout
         in
-        ( { model | bjState = finalState, balance = model.balance + payout }, Cmd.none )
+        ( { model | bjState = finalState, balance = newBalance }
+        , if payout > 0 then
+            postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (Gewinn/Push ausgezahlt)
+          else
+            Cmd.none
+        )
 
 
 randomSide : Random.Generator Side
@@ -1120,22 +1171,33 @@ viewRouletteResult state =
         _ ->
             div [ class "result-message placeholder" ] []
 
-
 viewRockPaperScissors : Model -> Html Msg
 viewRockPaperScissors model =
-    div [] [ text "Hier View für Schere Stein Papier einfügen" ]
+    div [] 
+        [ h2 [] [ text "✂️ Schere Stein Papier" ]
+        , p [] [ text "Hier kommt deine Schere-Stein-Papier Logik hin." ]
+        ]
 
 
 viewCardMonte : Model -> Html Msg
 viewCardMonte model =
-    div [] [ text "Hier View für Card Monte einfügen" ]
+    div [] 
+        [ h2 [] [ text "🃏 Find the Lady" ]
+        , p [] [ text "Hier kommt die Card-Monte Logik hin." ]
+        ]
 
 
 viewSlotMachine : Model -> Html Msg
 viewSlotMachine model =
-    div [] [ text "Hier View für Slot Machine einfügen" ]
+    div [] 
+        [ h2 [] [ text "🎰 Einarmiger Bandit" ]
+        , p [] [ text ("Status: " ++ model.slotMessage) ]
+        ]
 
 
 viewBlackjack : Model -> Html Msg
 viewBlackjack model =
-    div [] [ text "Hier View für Blackjack einfügen" ]
+    div [] 
+        [ h2 [] [ text "🃏 Blackjack" ]
+        , p [] [ text "Hier kommt deine Blackjack-Oberfläche hin." ]
+        ]

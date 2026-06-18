@@ -6584,6 +6584,9 @@ var $author$project$Main$DealerTurn = {$: 'DealerTurn'};
 var $author$project$Main$GenerateDealerChoice = function (a) {
 	return {$: 'GenerateDealerChoice', a: a};
 };
+var $author$project$Main$GotPostScoreResult = function (a) {
+	return {$: 'GotPostScoreResult', a: a};
+};
 var $author$project$Main$Leaderboard = {$: 'Leaderboard'};
 var $author$project$Main$MonteGuessing = {$: 'MonteGuessing'};
 var $author$project$Main$MonteResult = function (a) {
@@ -6632,6 +6635,7 @@ var $author$project$Main$SlotNewSlots = function (a) {
 var $author$project$Main$Spinning = {$: 'Spinning'};
 var $author$project$Main$TriggerRussianRouletteAnimationFinish = {$: 'TriggerRussianRouletteAnimationFinish'};
 var $author$project$Main$TriggerShuffleStart = {$: 'TriggerShuffleStart'};
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$Main$BjAce = {$: 'BjAce'};
 var $author$project$Main$bjCardValue = function (card) {
 	switch (card.$) {
@@ -6940,7 +6944,7 @@ var $elm$random$Random$int = F2(
 				}
 			});
 	});
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Basics$neq = _Utils_notEqual;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $elm$random$Random$map2 = F3(
 	function (func, _v0, _v1) {
@@ -6969,6 +6973,49 @@ var $elm$random$Random$pair = F2(
 				}),
 			genA,
 			genB);
+	});
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$http$Http$jsonBody = function (value) {
+	return A2(
+		_Http_pair,
+		'application/json',
+		A2($elm$json$Json$Encode$encode, 0, value));
+};
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $elm$http$Http$post = function (r) {
+	return $elm$http$Http$request(
+		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+};
+var $author$project$Main$postScore = F2(
+	function (neuerScore, toMsg) {
+		return $elm$http$Http$post(
+			{
+				body: $elm$http$Http$jsonBody(
+					$elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'score',
+								$elm$json$Json$Encode$int(neuerScore))
+							]))),
+				expect: A2(
+					$elm$http$Http$expectJson,
+					toMsg,
+					A2($elm$json$Json$Decode$field, 'score', $elm$json$Json$Decode$int)),
+				url: $author$project$Main$apiUrl
+			});
 	});
 var $author$project$Main$randomRPS = A2(
 	$elm$random$Random$uniform,
@@ -7091,11 +7138,12 @@ var $author$project$Main$updateDealer = function (model) {
 					return 0;
 			}
 		}();
+		var newBalance = model.balance + payout;
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
-				{balance: model.balance + payout, bjState: finalState}),
-			$elm$core$Platform$Cmd$none);
+				{balance: newBalance, bjState: finalState}),
+			(payout > 0) ? A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult) : $elm$core$Platform$Cmd$none);
 	}
 };
 var $elm$core$Maybe$withDefault = F2(
@@ -7118,6 +7166,18 @@ var $author$project$Main$update = F2(
 						_Utils_update(
 							model,
 							{balance: initialScore}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'GotPostScoreResult':
+				var result = msg.a;
+				if (result.$ === 'Ok') {
+					var aktuellerScoreVonApi = result.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{balance: aktuellerScoreVonApi}),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
@@ -7183,8 +7243,8 @@ var $author$project$Main$update = F2(
 				}
 			case 'SelectCoinSide':
 				var side = msg.a;
-				var _v3 = model.coinGameState;
-				if (_v3.$ === 'Spinning') {
+				var _v4 = model.coinGameState;
+				if (_v4.$ === 'Spinning') {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				} else {
 					return _Utils_Tuple2(
@@ -7194,8 +7254,8 @@ var $author$project$Main$update = F2(
 						$elm$core$Platform$Cmd$none);
 				}
 			case 'StartCoinSpin':
-				var _v4 = model.coinGameState;
-				if (_v4.$ === 'Spinning') {
+				var _v5 = model.coinGameState;
+				if (_v5.$ === 'Spinning') {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				} else {
 					return _Utils_Tuple2(
@@ -7216,7 +7276,7 @@ var $author$project$Main$update = F2(
 						{coinRotationDegrees: newRotation}),
 					A2(
 						$elm$core$Task$perform,
-						function (_v5) {
+						function (_v6) {
 							return $author$project$Main$RevealCoinResult(
 								{landedOn: side, won: won});
 						},
@@ -7231,7 +7291,7 @@ var $author$project$Main$update = F2(
 							balance: newBalance,
 							coinGameState: $author$project$Main$Result(resultData)
 						}),
-					$elm$core$Platform$Cmd$none);
+					A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult));
 			case 'SetupRussianRouletteBullet':
 				var chamber = msg.a;
 				return _Utils_Tuple2(
@@ -7249,15 +7309,15 @@ var $author$project$Main$update = F2(
 						$author$project$Main$SetupRussianRouletteBullet,
 						A2($elm$random$Random$int, 1, 6)));
 			case 'PullRussianRouletteTrigger':
-				var _v6 = model.rouletteState;
-				if (_v6.$ === 'RouletteIdle') {
+				var _v7 = model.rouletteState;
+				if (_v7.$ === 'RouletteIdle') {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{rouletteState: $author$project$Main$RouletteFiring}),
 						A2(
 							$elm$core$Task$perform,
-							function (_v7) {
+							function (_v8) {
 								return $author$project$Main$TriggerRussianRouletteAnimationFinish;
 							},
 							$elm$core$Process$sleep(800)));
@@ -7266,33 +7326,35 @@ var $author$project$Main$update = F2(
 				}
 			case 'TriggerRussianRouletteAnimationFinish':
 				if (_Utils_eq(model.currentShot, model.bulletChamber)) {
-					var _v8 = model.rouletteTurn;
-					if (_v8.$ === 'PlayerTurn') {
+					var _v9 = model.rouletteTurn;
+					if (_v9.$ === 'PlayerTurn') {
+						var newBalance = model.balance - 1000;
 						return _Utils_Tuple2(
 							_Utils_update(
 								model,
 								{
-									balance: model.balance - 1000,
+									balance: newBalance,
 									rouletteState: $author$project$Main$RouletteDead($author$project$Main$PlayerTurn)
 								}),
-							$elm$core$Platform$Cmd$none);
+							A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult));
 					} else {
+						var newBalance = model.balance + 1000;
 						return _Utils_Tuple2(
 							_Utils_update(
 								model,
-								{balance: model.balance + 1000, rouletteState: $author$project$Main$RouletteWon}),
-							$elm$core$Platform$Cmd$none);
+								{balance: newBalance, rouletteState: $author$project$Main$RouletteWon}),
+							A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult));
 					}
 				} else {
-					var _v9 = model.rouletteTurn;
-					if (_v9.$ === 'PlayerTurn') {
+					var _v10 = model.rouletteTurn;
+					if (_v10.$ === 'PlayerTurn') {
 						return _Utils_Tuple2(
 							_Utils_update(
 								model,
 								{currentShot: model.currentShot + 1, rouletteRotation: 0, rouletteState: $author$project$Main$RouletteIdle, rouletteTurn: $author$project$Main$DealerTurn}),
 							A2(
 								$elm$core$Task$perform,
-								function (_v10) {
+								function (_v11) {
 									return $author$project$Main$RussianRouletteDealerAutoPlay;
 								},
 								$elm$core$Process$sleep(1500)));
@@ -7311,7 +7373,7 @@ var $author$project$Main$update = F2(
 						{rouletteState: $author$project$Main$RouletteFiring}),
 					A2(
 						$elm$core$Task$perform,
-						function (_v11) {
+						function (_v12) {
 							return $author$project$Main$TriggerRussianRouletteAnimationFinish;
 						},
 						$elm$core$Process$sleep(800))) : _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
@@ -7329,7 +7391,7 @@ var $author$project$Main$update = F2(
 						{rpsDealerChoice: $author$project$Main$None, rpsPlayerChoice: choice, rpsState: $author$project$Main$RPSShaking}),
 					A2(
 						$elm$core$Task$perform,
-						function (_v12) {
+						function (_v13) {
 							return $author$project$Main$ResolveRPSRound(choice);
 						},
 						$elm$core$Process$sleep(1200)));
@@ -7360,7 +7422,7 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{balance: newBalance, rpsDealerChoice: dChoice, rpsDealerScore: newDScore, rpsPlayerScore: newPScore, rpsState: nextState}),
-					$elm$core$Platform$Cmd$none);
+					(!_Utils_eq(newBalance, model.balance)) ? A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult) : $elm$core$Platform$Cmd$none);
 			case 'StartMonteGame':
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -7378,7 +7440,7 @@ var $author$project$Main$update = F2(
 						}),
 					A2(
 						$elm$core$Task$perform,
-						function (_v14) {
+						function (_v15) {
 							return $author$project$Main$TriggerShuffleStart;
 						},
 						$elm$core$Process$sleep(2200)));
@@ -7389,7 +7451,7 @@ var $author$project$Main$update = F2(
 						{monteState: $author$project$Main$MonteShaking, shuffleRound: 0}),
 					A2(
 						$elm$core$Task$perform,
-						function (_v15) {
+						function (_v16) {
 							return $author$project$Main$PerformShuffleStep;
 						},
 						$elm$core$Task$succeed(_Utils_Tuple0)));
@@ -7419,7 +7481,7 @@ var $author$project$Main$update = F2(
 						{currentShuffleType: animation}),
 					A2(
 						$elm$core$Task$perform,
-						function (_v16) {
+						function (_v17) {
 							return $author$project$Main$PerformShuffleStep;
 						},
 						$elm$core$Process$sleep(1100)));
@@ -7455,17 +7517,26 @@ var $author$project$Main$update = F2(
 							balance: newBalance,
 							monteState: $author$project$Main$MonteResult(isCorrect)
 						}),
-					$elm$core$Platform$Cmd$none);
+					A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult));
 			case 'StartSlotSpin':
-				return model.slotIsSpinning ? _Utils_Tuple2(model, $elm$core$Platform$Cmd$none) : ((model.balance < 10) ? _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{slotMessage: 'Nicht genug Geld! Geh zurück zum Dashboard.'}),
-					$elm$core$Platform$Cmd$none) : _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{balance: model.balance - 10, slotIsSpinning: true, slotMessage: 'Die Walzen laufen...', slotSpinTicks: 0}),
-					$elm$core$Platform$Cmd$none));
+				if (model.slotIsSpinning) {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				} else {
+					if (model.balance < 10) {
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{slotMessage: 'Nicht genug Geld! Geh zurück zum Dashboard.'}),
+							$elm$core$Platform$Cmd$none);
+					} else {
+						var newBalance = model.balance - 10;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{balance: newBalance, slotIsSpinning: true, slotMessage: 'Die Walzen laufen...', slotSpinTicks: 0}),
+							A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult));
+					}
+				}
 			case 'SlotTick':
 				return (model.slotSpinTicks >= 10) ? _Utils_Tuple2(
 					model,
@@ -7475,10 +7546,10 @@ var $author$project$Main$update = F2(
 						{slotSpinTicks: model.slotSpinTicks + 1}),
 					A2($elm$random$Random$generate, $author$project$Main$SlotNewSlots, $author$project$Main$slotsGenerator));
 			case 'SlotNewSlots':
-				var _v17 = msg.a;
-				var s1 = _v17.a;
-				var s2 = _v17.b;
-				var s3 = _v17.c;
+				var _v18 = msg.a;
+				var s1 = _v18.a;
+				var s2 = _v18.b;
+				var s3 = _v18.c;
 				if (model.slotIsSpinning && (model.slotSpinTicks < 10)) {
 					return _Utils_Tuple2(
 						_Utils_update(
@@ -7486,7 +7557,7 @@ var $author$project$Main$update = F2(
 							{slot1: s1, slot2: s2, slot3: s3}),
 						$elm$core$Platform$Cmd$none);
 				} else {
-					var _v18 = function () {
+					var _v19 = function () {
 						if (_Utils_eq(s1, s2) && _Utils_eq(s2, s3)) {
 							switch (s1.$) {
 								case 'Seven':
@@ -7506,18 +7577,19 @@ var $author$project$Main$update = F2(
 							}
 						}
 					}();
-					var winAmount = _v18.a;
-					var msgText = _v18.b;
+					var winAmount = _v19.a;
+					var msgText = _v19.b;
+					var newBalance = model.balance + winAmount;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{balance: model.balance + winAmount, slot1: s1, slot2: s2, slot3: s3, slotIsSpinning: false, slotMessage: msgText}),
-						$elm$core$Platform$Cmd$none);
+							{balance: newBalance, slot1: s1, slot2: s2, slot3: s3, slotIsSpinning: false, slotMessage: msgText}),
+						(winAmount > 0) ? A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult) : $elm$core$Platform$Cmd$none);
 				}
 			case 'BjInitialDraw':
-				var _v20 = msg.a;
-				var pCard = _v20.a;
-				var dCard = _v20.b;
+				var _v21 = msg.a;
+				var pCard = _v21.a;
+				var dCard = _v21.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -7557,18 +7629,28 @@ var $author$project$Main$update = F2(
 					{bjDealerHand: newHand});
 				return $author$project$Main$updateDealer(primeModel);
 			default:
-				return (model.balance < 20) ? _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{currentPage: $author$project$Main$Dashboard}),
-					$elm$core$Platform$Cmd$none) : _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{balance: model.balance - 20, bjDealerHand: _List_Nil, bjPlayerHand: _List_Nil, bjState: $author$project$Main$BjPlayerTurn}),
-					A2(
-						$elm$random$Random$generate,
-						$author$project$Main$BjInitialDraw,
-						A2($elm$random$Random$pair, $author$project$Main$bjCardGenerator, $author$project$Main$bjCardGenerator)));
+				if (model.balance < 20) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{currentPage: $author$project$Main$Dashboard}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var newBalance = model.balance - 20;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{balance: newBalance, bjDealerHand: _List_Nil, bjPlayerHand: _List_Nil, bjState: $author$project$Main$BjPlayerTurn}),
+						$elm$core$Platform$Cmd$batch(
+							_List_fromArray(
+								[
+									A2(
+									$elm$random$Random$generate,
+									$author$project$Main$BjInitialDraw,
+									A2($elm$random$Random$pair, $author$project$Main$bjCardGenerator, $author$project$Main$bjCardGenerator)),
+									A2($author$project$Main$postScore, newBalance, $author$project$Main$GotPostScoreResult)
+								])));
+				}
 		}
 	});
 var $author$project$Main$NavigateTo = function (a) {
@@ -7656,13 +7738,28 @@ var $elm$html$Html$select = _VirtualDom_node('select');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $elm$html$Html$h2 = _VirtualDom_node('h2');
+var $elm$html$Html$p = _VirtualDom_node('p');
 var $author$project$Main$viewBlackjack = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text('Hier View für Blackjack einfügen')
+				A2(
+				$elm$html$Html$h2,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('🃏 Blackjack')
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Hier kommt deine Blackjack-Oberfläche hin.')
+					]))
 			]));
 };
 var $author$project$Main$viewCardMonte = function (model) {
@@ -7671,7 +7768,20 @@ var $author$project$Main$viewCardMonte = function (model) {
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text('Hier View für Card Monte einfügen')
+				A2(
+				$elm$html$Html$h2,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('🃏 Find the Lady')
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Hier kommt die Card-Monte Logik hin.')
+					]))
 			]));
 };
 var $author$project$Main$SelectCoinSide = function (a) {
@@ -7687,10 +7797,8 @@ var $elm$html$Html$Attributes$boolProperty = F2(
 			$elm$json$Json$Encode$bool(bool));
 	});
 var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
-var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
-var $elm$html$Html$p = _VirtualDom_node('p');
 var $author$project$Main$viewCoinResult = function (state) {
 	if (state.$ === 'Result') {
 		var won = state.a.won;
@@ -8001,7 +8109,20 @@ var $author$project$Main$viewRockPaperScissors = function (model) {
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text('Hier View für Schere Stein Papier einfügen')
+				A2(
+				$elm$html$Html$h2,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('✂️ Schere Stein Papier')
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Hier kommt deine Schere-Stein-Papier Logik hin.')
+					]))
 			]));
 };
 var $author$project$Main$PullRussianRouletteTrigger = {$: 'PullRussianRouletteTrigger'};
@@ -8217,7 +8338,20 @@ var $author$project$Main$viewSlotMachine = function (model) {
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text('Hier View für Slot Machine einfügen')
+				A2(
+				$elm$html$Html$h2,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('🎰 Einarmiger Bandit')
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Status: ' + model.slotMessage)
+					]))
 			]));
 };
 var $author$project$Main$viewStaticPage = F2(

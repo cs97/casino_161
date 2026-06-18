@@ -989,12 +989,6 @@ view model =
         ]
 
 
-viewStaticPage : String -> String -> Html Msg
-viewStaticPage title description =
-    div [ class "static-page" ]
-        [ h2 [] [ text title ]
-        , p [] [ text description ]
-        ]
 
 
 
@@ -1171,33 +1165,392 @@ viewRouletteResult state =
         _ ->
             div [ class "result-message placeholder" ] []
 
+
+
+
+
+-- VIEW: ROCK PAPER SCISSORS
+
+
 viewRockPaperScissors : Model -> Html Msg
 viewRockPaperScissors model =
-    div [] 
+    let
+        isShaking =
+            model.rpsState == RPSShaking
+
+        isGameOver =
+            case model.rpsState of
+                RPSGameOver _ ->
+                    True
+
+                _ ->
+                    False
+
+        toEmoji choice shaking =
+            if shaking then
+                "✊"
+
+            else
+                case choice of
+                    Rock ->
+                        "✊"
+
+                    Paper ->
+                        "✋"
+
+                    Scissors ->
+                        "✌️"
+
+                    None ->
+                        "❓"
+
+        statusText =
+            case model.rpsState of
+                RPSIdle ->
+                    "Wähle deine Hand! Wer zuerst 3 Punkte hat, gewinnt."
+
+                RPSShaking ->
+                    "Schere... Stein... Papier..."
+
+                RPSShowingRound RoundTie ->
+                    "Unentschieden in dieser Runde!"
+
+                RPSShowingRound RoundPlayerWins ->
+                    "Punkt für dich! 🎉"
+
+                RPSShowingRound RoundDealerWins ->
+                    "Punkt für den Gegner! 🤖"
+
+                RPSShowingRound RoundNone ->
+                    ""
+
+                RPSGameOver True ->
+                    "🏆 MATCH-SIEG! Du gewinnst 20€!"
+
+                RPSGameOver False ->
+                    "💀 MATCH-NIEDERLAGE! Du verlierst 20€."
+    in
+    div []
         [ h2 [] [ text "✂️ Schere Stein Papier" ]
-        , p [] [ text "Hier kommt deine Schere-Stein-Papier Logik hin." ]
+
+        -- Scoreboard
+        , div [ class "rps-scoreboard" ]
+            [ div [ class "score-box" ] [ p [] [ text "Du" ], h1 [] [ text (String.fromInt model.rpsPlayerScore) ] ]
+            , div [ class "score-divider" ] [ text "VS" ]
+            , div [ class "score-box" ] [ p [] [ text "Gegner" ], h1 [] [ text (String.fromInt model.rpsDealerScore) ] ]
+            ]
+
+        -- Status
+        , div [ class "roulette-status" ] [ text statusText ]
+
+        -- Arena
+        , div [ class "rps-arena" ]
+            [ div [ class "rps-hand-wrapper" ]
+                [ p [] [ text "Deine Hand" ]
+                , div [ classList [ ( "rps-hand player-hand", True ), ( "hand-shake", isShaking ) ] ]
+                    [ text (toEmoji model.rpsPlayerChoice isShaking) ]
+                ]
+            , div [ class "rps-hand-wrapper" ]
+                [ p [] [ text "Gegner" ]
+                , div [ classList [ ( "rps-hand dealer-hand", True ), ( "hand-shake", isShaking ) ] ]
+                    [ text (toEmoji model.rpsDealerChoice isShaking) ]
+                ]
+            ]
+
+        -- Interaktion
+        , if isGameOver then
+            button [ class "btn action-btn rps-btn-reset", onClick StartRPSGame ] [ text "Neues Match starten (20€)" ]
+
+          else
+            div [ class "rps-choices" ]
+                [ button [ class "btn rps-choice-btn", onClick (PlayerChooseRPS Rock), disabled isShaking ] [ text "✊ Stein" ]
+                , button [ class "btn rps-choice-btn", onClick (PlayerChooseRPS Paper), disabled isShaking ] [ text "✋ Papier" ]
+                , button [ class "btn rps-choice-btn", onClick (PlayerChooseRPS Scissors), disabled isShaking ] [ text "✌️ Schere" ]
+                ]
         ]
+
+
+
+-- VIEW: CARD MONTE (🃏 FIND THE LADY)
 
 
 viewCardMonte : Model -> Html Msg
 viewCardMonte model =
-    div [] 
+    let
+        statusText =
+            case model.monteState of
+                MonteIdle ->
+                    "Merk dir die Lady (🂽)! Danach werden sie gemischt."
+
+                MonteShowing ->
+                    "MERK DIR DIE POSITION!"
+
+                MonteShaking ->
+                    "AUGEN AUF! Die Karten rotieren..."
+
+                MonteGuessing ->
+                    "Wo ist die Lady (🂽) versteckt? Wähle weise!"
+
+                MonteResult True ->
+                    "🏆 GENIAL! Du hast die Lady gefunden! +20€"
+
+                MonteResult False ->
+                    "💀 FALSCH! Du hast die Lady leider nicht gefunden. -20€"
+
+        isGuessing =
+            model.monteState == MonteGuessing
+
+        isRevealed =
+            case model.monteState of
+                MonteShowing ->
+                    True
+
+                MonteResult _ ->
+                    True
+
+                _ ->
+                    False
+
+        animationClass =
+            case model.currentShuffleType of
+                NoShuffle ->
+                    "anim-none"
+
+                SwapLeftMiddle ->
+                    "anim-swap-left-middle"
+
+                SwapMiddleRight ->
+                    "anim-swap-middle-right"
+
+                SwapLeftRight ->
+                    "anim-swap-left-right"
+
+                RotateClockwise ->
+                    "anim-rotate-clockwise"
+
+        renderKeyedCard card =
+            let
+                cardLabel =
+                    if isRevealed then
+                        if card.isTarget then
+                            "🂽"
+
+                        else
+                            "🂡"
+
+                    else
+                        "🂠"
+
+                cardColorClass =
+                    if isRevealed && card.isTarget then
+                        "card-red"
+
+                    else if isRevealed then
+                        "card-black"
+
+                    else
+                        "card-back"
+
+                uniqueKey =
+                    case card.id of
+                        CardA ->
+                            "cardA"
+
+                        CardB ->
+                            "cardB"
+
+                        CardC ->
+                            "cardC"
+            in
+            ( uniqueKey
+            , button
+                [ classList
+                    [ ( "monte-card-item", True )
+                    , ( cardColorClass, True )
+                    , ( "clickable-guess", isGuessing )
+                    ]
+                , onClick (PlayerGuessCard card.id)
+                , disabled (not isGuessing)
+                ]
+                [ text cardLabel ]
+            )
+    in
+    div []
         [ h2 [] [ text "🃏 Find the Lady" ]
-        , p [] [ text "Hier kommt die Card-Monte Logik hin." ]
+        , div [ class "roulette-status" ] [ text statusText ]
+        , Keyed.node "div"
+            [ class "monte-table", class animationClass ]
+            (List.map renderKeyedCard model.monteCards)
+        , case model.monteState of
+            MonteIdle ->
+                button [ class "btn action-btn monte-start-btn", onClick StartMonteGame ] [ text "Karten aufdecken & Mischen (Kostenlos)" ]
+
+            MonteResult _ ->
+                button [ class "btn action-btn monte-reset-btn", onClick StartMonteGame ] [ text "Nächstes Spiel wagen" ]
+
+            _ ->
+                div [ class "result-message placeholder" ] []
         ]
+
+
+
+-- VIEW: SLOT MACHINE
+
+
+symbolToString : Symbol -> String
+symbolToString symbol =
+    case symbol of
+        Cherry ->
+            "🍒"
+
+        Seven ->
+            "7️⃣"
+
+        Diamond ->
+            "💎"
+
+        Lemon ->
+            "🍋"
 
 
 viewSlotMachine : Model -> Html Msg
 viewSlotMachine model =
-    div [] 
+    div []
         [ h2 [] [ text "🎰 Einarmiger Bandit" ]
-        , p [] [ text ("Status: " ++ model.slotMessage) ]
+        , div [ class "roulette-status" ] [ text model.slotMessage ]
+        , div [ class "slot-arena" ]
+            [ div [ classList [ ( "slot-reel", True ), ( "blur-animation", model.slotIsSpinning ) ] ] [ text (symbolToString model.slot1) ]
+            , div [ classList [ ( "slot-reel", True ), ( "blur-animation", model.slotIsSpinning && model.slotSpinTicks > 3 ) ] ] [ text (symbolToString model.slot2) ]
+            , div [ classList [ ( "slot-reel", True ), ( "blur-animation", model.slotIsSpinning && model.slotSpinTicks > 6 ) ] ] [ text (symbolToString model.slot3) ]
+            ]
+        , div []
+            [ button
+                [ onClick StartSlotSpin
+                , class "btn action-btn"
+                , disabled model.slotIsSpinning
+                ]
+                [ text
+                    (if model.slotIsSpinning then
+                        "Walzen drehen..."
+
+                     else
+                        "DREHEN! (10€)"
+                    )
+                ]
+            ]
         ]
+
+
+
+-- VIEW: BLACKJACK
 
 
 viewBlackjack : Model -> Html Msg
 viewBlackjack model =
-    div [] 
-        [ h2 [] [ text "🃏 Blackjack" ]
-        , p [] [ text "Hier kommt deine Blackjack-Oberfläche hin." ]
+    div [ class "blackjack-container" ]
+        [ h2 [] [ text "🃏 Blackjack (Casino Edition)" ]
+        , div [ class "roulette-status" ]
+            [ text (viewBjStatus model.bjState) ]
+
+        -- DEALER AREA
+        , div [ class "bj-sector dealer-sector" ]
+            [ h3 [] [ text ("Dealer (Punkte: " ++ String.fromInt (bjCalculateScore model.bjDealerHand) ++ ")") ]
+            , div [ class "bj-hand-display" ]
+                (List.map viewBjCard (List.reverse model.bjDealerHand))
+            ]
+
+        -- PLAYER AREA
+        , div [ class "bj-sector player-sector" ]
+            [ h3 [] [ text ("Spieler (Punkte: " ++ String.fromInt (bjCalculateScore model.bjPlayerHand) ++ ")") ]
+            , div [ class "bj-hand-display" ]
+                (List.map viewBjCard (List.reverse model.bjPlayerHand))
+            ]
+
+        -- CONTROLS
+        , div [ class "bj-controls" ]
+            (if model.bjState == BjPlayerTurn then
+                [ button [ class "btn action-btn bj-hit-btn", onClick BjHit ] [ text "Karte ziehen (Hit)" ]
+                , button [ class "btn action-btn bj-stand-btn", onClick BjStand ] [ text "Halten (Stand)" ]
+                ]
+
+             else
+                [ button [ class "btn action-btn bj-reset-btn", onClick BjRestart ] [ text "Neues Spiel (Einsatz: 20€)" ] ]
+            )
         ]
+
+
+viewBjStatus : BjGameState -> String
+viewBjStatus state =
+    case state of
+        BjPlayerTurn ->
+            "Du bist am Zug. Ziehen oder Halten?"
+
+        BjDealerTurn ->
+            "Dealer zieht Karten..."
+
+        BjPlayerBusted ->
+            "Du hast dich überkauft (über 21)! -20€"
+
+        BjDealerBusted ->
+            "Dealer hat sich überkauft! Du gewinnst +50€!"
+
+        BjPlayerWins ->
+            "Glückwunsch! Du hast mehr Punkte und gewinnst +50€!"
+
+        BjDealerWins ->
+            "Der Dealer gewinnt. -20€"
+
+        BjPush ->
+            "Unentschieden! Du bekommst deinen Einsatz zurück (+20€)."
+
+
+viewBjCard : BjCard -> Html Msg
+viewBjCard card =
+    let
+        sym =
+            case card of
+                BjAce ->
+                    "🂡"
+
+                BjTwo ->
+                    "🂢"
+
+                BjThree ->
+                    "🂣"
+
+                BjFour ->
+                    "🂤"
+
+                BjFive ->
+                    "🂥"
+
+                BjSix ->
+                    "🂦"
+
+                BjSeven ->
+                    "🂧"
+
+                BjEight ->
+                    "🂨"
+
+                BjNine ->
+                    "🂩"
+
+                BjTen ->
+                    "🂪"
+
+                BjJack ->
+                    "🂫"
+
+                BjQueen ->
+                    "🂭"
+
+                BjKing ->
+                    "🂮"
+    in
+    span [ class "bj-card-render" ] [ text sym ]
+
+
+viewStaticPage : String -> String -> Html Msg
+viewStaticPage titel beschreibung =
+    div [ class "static-page" ] [ h2 [] [ text titel ], p [] [ text beschreibung ] ]

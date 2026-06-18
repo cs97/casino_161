@@ -7738,12 +7738,79 @@ var $elm$html$Html$select = _VirtualDom_node('select');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Main$BjHit = {$: 'BjHit'};
+var $author$project$Main$BjRestart = {$: 'BjRestart'};
+var $author$project$Main$BjStand = {$: 'BjStand'};
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
-var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$h3 = _VirtualDom_node('h3');
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $author$project$Main$viewBjCard = function (card) {
+	var sym = function () {
+		switch (card.$) {
+			case 'BjAce':
+				return '🂡';
+			case 'BjTwo':
+				return '🂢';
+			case 'BjThree':
+				return '🂣';
+			case 'BjFour':
+				return '🂤';
+			case 'BjFive':
+				return '🂥';
+			case 'BjSix':
+				return '🂦';
+			case 'BjSeven':
+				return '🂧';
+			case 'BjEight':
+				return '🂨';
+			case 'BjNine':
+				return '🂩';
+			case 'BjTen':
+				return '🂪';
+			case 'BjJack':
+				return '🂫';
+			case 'BjQueen':
+				return '🂭';
+			default:
+				return '🂮';
+		}
+	}();
+	return A2(
+		$elm$html$Html$span,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('bj-card-render')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(sym)
+			]));
+};
+var $author$project$Main$viewBjStatus = function (state) {
+	switch (state.$) {
+		case 'BjPlayerTurn':
+			return 'Du bist am Zug. Ziehen oder Halten?';
+		case 'BjDealerTurn':
+			return 'Dealer zieht Karten...';
+		case 'BjPlayerBusted':
+			return 'Du hast dich überkauft (über 21)! -20€';
+		case 'BjDealerBusted':
+			return 'Dealer hat sich überkauft! Du gewinnst +50€!';
+		case 'BjPlayerWins':
+			return 'Glückwunsch! Du hast mehr Punkte und gewinnst +50€!';
+		case 'BjDealerWins':
+			return 'Der Dealer gewinnt. -20€';
+		default:
+			return 'Unentschieden! Du bekommst deinen Einsatz zurück (+20€).';
+	}
+};
 var $author$project$Main$viewBlackjack = function (model) {
 	return A2(
 		$elm$html$Html$div,
-		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('blackjack-container')
+			]),
 		_List_fromArray(
 			[
 				A2(
@@ -7751,18 +7818,223 @@ var $author$project$Main$viewBlackjack = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$text('🃏 Blackjack')
+						$elm$html$Html$text('🃏 Blackjack (Casino Edition)')
 					])),
 				A2(
-				$elm$html$Html$p,
-				_List_Nil,
+				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$text('Hier kommt deine Blackjack-Oberfläche hin.')
+						$elm$html$Html$Attributes$class('roulette-status')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$author$project$Main$viewBjStatus(model.bjState))
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('bj-sector dealer-sector')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$h3,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								'Dealer (Punkte: ' + ($elm$core$String$fromInt(
+									$author$project$Main$bjCalculateScore(model.bjDealerHand)) + ')'))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('bj-hand-display')
+							]),
+						A2(
+							$elm$core$List$map,
+							$author$project$Main$viewBjCard,
+							$elm$core$List$reverse(model.bjDealerHand)))
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('bj-sector player-sector')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$h3,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								'Spieler (Punkte: ' + ($elm$core$String$fromInt(
+									$author$project$Main$bjCalculateScore(model.bjPlayerHand)) + ')'))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('bj-hand-display')
+							]),
+						A2(
+							$elm$core$List$map,
+							$author$project$Main$viewBjCard,
+							$elm$core$List$reverse(model.bjPlayerHand)))
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('bj-controls')
+					]),
+				_Utils_eq(model.bjState, $author$project$Main$BjPlayerTurn) ? _List_fromArray(
+					[
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('btn action-btn bj-hit-btn'),
+								$elm$html$Html$Events$onClick($author$project$Main$BjHit)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Karte ziehen (Hit)')
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('btn action-btn bj-stand-btn'),
+								$elm$html$Html$Events$onClick($author$project$Main$BjStand)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Halten (Stand)')
+							]))
+					]) : _List_fromArray(
+					[
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('btn action-btn bj-reset-btn'),
+								$elm$html$Html$Events$onClick($author$project$Main$BjRestart)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Neues Spiel (Einsatz: 20€)')
+							]))
 					]))
 			]));
 };
+var $author$project$Main$PlayerGuessCard = function (a) {
+	return {$: 'PlayerGuessCard', a: a};
+};
+var $author$project$Main$StartMonteGame = {$: 'StartMonteGame'};
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$bool(bool));
+	});
+var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
+var $elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
+	return _VirtualDom_keyedNode(
+		_VirtualDom_noScript(tag));
+};
+var $elm$html$Html$Keyed$node = $elm$virtual_dom$VirtualDom$keyedNode;
+var $elm$core$Basics$not = _Basics_not;
 var $author$project$Main$viewCardMonte = function (model) {
+	var statusText = function () {
+		var _v4 = model.monteState;
+		switch (_v4.$) {
+			case 'MonteIdle':
+				return 'Merk dir die Lady (🂽)! Danach werden sie gemischt.';
+			case 'MonteShowing':
+				return 'MERK DIR DIE POSITION!';
+			case 'MonteShaking':
+				return 'AUGEN AUF! Die Karten rotieren...';
+			case 'MonteGuessing':
+				return 'Wo ist die Lady (🂽) versteckt? Wähle weise!';
+			default:
+				if (_v4.a) {
+					return '🏆 GENIAL! Du hast die Lady gefunden! +20€';
+				} else {
+					return '💀 FALSCH! Du hast die Lady leider nicht gefunden. -20€';
+				}
+		}
+	}();
+	var isRevealed = function () {
+		var _v3 = model.monteState;
+		switch (_v3.$) {
+			case 'MonteShowing':
+				return true;
+			case 'MonteResult':
+				return true;
+			default:
+				return false;
+		}
+	}();
+	var isGuessing = _Utils_eq(model.monteState, $author$project$Main$MonteGuessing);
+	var renderKeyedCard = function (card) {
+		var uniqueKey = function () {
+			var _v2 = card.id;
+			switch (_v2.$) {
+				case 'CardA':
+					return 'cardA';
+				case 'CardB':
+					return 'cardB';
+				default:
+					return 'cardC';
+			}
+		}();
+		var cardLabel = isRevealed ? (card.isTarget ? '🂽' : '🂡') : '🂠';
+		var cardColorClass = (isRevealed && card.isTarget) ? 'card-red' : (isRevealed ? 'card-black' : 'card-back');
+		return _Utils_Tuple2(
+			uniqueKey,
+			A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$classList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2('monte-card-item', true),
+								_Utils_Tuple2(cardColorClass, true),
+								_Utils_Tuple2('clickable-guess', isGuessing)
+							])),
+						$elm$html$Html$Events$onClick(
+						$author$project$Main$PlayerGuessCard(card.id)),
+						$elm$html$Html$Attributes$disabled(!isGuessing)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(cardLabel)
+					])));
+	};
+	var animationClass = function () {
+		var _v1 = model.currentShuffleType;
+		switch (_v1.$) {
+			case 'NoShuffle':
+				return 'anim-none';
+			case 'SwapLeftMiddle':
+				return 'anim-swap-left-middle';
+			case 'SwapMiddleRight':
+				return 'anim-swap-middle-right';
+			case 'SwapLeftRight':
+				return 'anim-swap-left-right';
+			default:
+				return 'anim-rotate-clockwise';
+		}
+	}();
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -7776,29 +8048,70 @@ var $author$project$Main$viewCardMonte = function (model) {
 						$elm$html$Html$text('🃏 Find the Lady')
 					])),
 				A2(
-				$elm$html$Html$p,
-				_List_Nil,
+				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$text('Hier kommt die Card-Monte Logik hin.')
-					]))
+						$elm$html$Html$Attributes$class('roulette-status')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(statusText)
+					])),
+				A3(
+				$elm$html$Html$Keyed$node,
+				'div',
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('monte-table'),
+						$elm$html$Html$Attributes$class(animationClass)
+					]),
+				A2($elm$core$List$map, renderKeyedCard, model.monteCards)),
+				function () {
+				var _v0 = model.monteState;
+				switch (_v0.$) {
+					case 'MonteIdle':
+						return A2(
+							$elm$html$Html$button,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('btn action-btn monte-start-btn'),
+									$elm$html$Html$Events$onClick($author$project$Main$StartMonteGame)
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Karten aufdecken & Mischen (Kostenlos)')
+								]));
+					case 'MonteResult':
+						return A2(
+							$elm$html$Html$button,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('btn action-btn monte-reset-btn'),
+									$elm$html$Html$Events$onClick($author$project$Main$StartMonteGame)
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Nächstes Spiel wagen')
+								]));
+					default:
+						return A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('result-message placeholder')
+								]),
+							_List_Nil);
+				}
+			}()
 			]));
 };
 var $author$project$Main$SelectCoinSide = function (a) {
 	return {$: 'SelectCoinSide', a: a};
 };
 var $author$project$Main$StartCoinSpin = {$: 'StartCoinSpin'};
-var $elm$json$Json$Encode$bool = _Json_wrap;
-var $elm$html$Html$Attributes$boolProperty = F2(
-	function (key, bool) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$bool(bool));
-	});
-var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $elm$html$Html$p = _VirtualDom_node('p');
 var $author$project$Main$viewCoinResult = function (state) {
 	if (state.$ === 'Result') {
 		var won = state.a.won;
@@ -8103,7 +8416,67 @@ var $author$project$Main$viewDashboard = A2(
 						]))
 				]))
 		]));
+var $author$project$Main$PlayerChooseRPS = function (a) {
+	return {$: 'PlayerChooseRPS', a: a};
+};
+var $author$project$Main$StartRPSGame = {$: 'StartRPSGame'};
 var $author$project$Main$viewRockPaperScissors = function (model) {
+	var toEmoji = F2(
+		function (choice, shaking) {
+			if (shaking) {
+				return '✊';
+			} else {
+				switch (choice.$) {
+					case 'Rock':
+						return '✊';
+					case 'Paper':
+						return '✋';
+					case 'Scissors':
+						return '✌️';
+					default:
+						return '❓';
+				}
+			}
+		});
+	var statusText = function () {
+		var _v1 = model.rpsState;
+		switch (_v1.$) {
+			case 'RPSIdle':
+				return 'Wähle deine Hand! Wer zuerst 3 Punkte hat, gewinnt.';
+			case 'RPSShaking':
+				return 'Schere... Stein... Papier...';
+			case 'RPSShowingRound':
+				switch (_v1.a.$) {
+					case 'RoundTie':
+						var _v2 = _v1.a;
+						return 'Unentschieden in dieser Runde!';
+					case 'RoundPlayerWins':
+						var _v3 = _v1.a;
+						return 'Punkt für dich! 🎉';
+					case 'RoundDealerWins':
+						var _v4 = _v1.a;
+						return 'Punkt für den Gegner! 🤖';
+					default:
+						var _v5 = _v1.a;
+						return '';
+				}
+			default:
+				if (_v1.a) {
+					return '🏆 MATCH-SIEG! Du gewinnst 20€!';
+				} else {
+					return '💀 MATCH-NIEDERLAGE! Du verlierst 20€.';
+				}
+		}
+	}();
+	var isShaking = _Utils_eq(model.rpsState, $author$project$Main$RPSShaking);
+	var isGameOver = function () {
+		var _v0 = model.rpsState;
+		if (_v0.$ === 'RPSGameOver') {
+			return true;
+		} else {
+			return false;
+		}
+	}();
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -8117,17 +8490,217 @@ var $author$project$Main$viewRockPaperScissors = function (model) {
 						$elm$html$Html$text('✂️ Schere Stein Papier')
 					])),
 				A2(
-				$elm$html$Html$p,
-				_List_Nil,
+				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$text('Hier kommt deine Schere-Stein-Papier Logik hin.')
+						$elm$html$Html$Attributes$class('rps-scoreboard')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('score-box')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$p,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Du')
+									])),
+								A2(
+								$elm$html$Html$h1,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										$elm$core$String$fromInt(model.rpsPlayerScore))
+									]))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('score-divider')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('VS')
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('score-box')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$p,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Gegner')
+									])),
+								A2(
+								$elm$html$Html$h1,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										$elm$core$String$fromInt(model.rpsDealerScore))
+									]))
+							]))
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('roulette-status')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(statusText)
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('rps-arena')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('rps-hand-wrapper')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$p,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Deine Hand')
+									])),
+								A2(
+								$elm$html$Html$div,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$classList(
+										_List_fromArray(
+											[
+												_Utils_Tuple2('rps-hand player-hand', true),
+												_Utils_Tuple2('hand-shake', isShaking)
+											]))
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										A2(toEmoji, model.rpsPlayerChoice, isShaking))
+									]))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('rps-hand-wrapper')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$p,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Gegner')
+									])),
+								A2(
+								$elm$html$Html$div,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$classList(
+										_List_fromArray(
+											[
+												_Utils_Tuple2('rps-hand dealer-hand', true),
+												_Utils_Tuple2('hand-shake', isShaking)
+											]))
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										A2(toEmoji, model.rpsDealerChoice, isShaking))
+									]))
+							]))
+					])),
+				isGameOver ? A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('btn action-btn rps-btn-reset'),
+						$elm$html$Html$Events$onClick($author$project$Main$StartRPSGame)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Neues Match starten (20€)')
+					])) : A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('rps-choices')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('btn rps-choice-btn'),
+								$elm$html$Html$Events$onClick(
+								$author$project$Main$PlayerChooseRPS($author$project$Main$Rock)),
+								$elm$html$Html$Attributes$disabled(isShaking)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('✊ Stein')
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('btn rps-choice-btn'),
+								$elm$html$Html$Events$onClick(
+								$author$project$Main$PlayerChooseRPS($author$project$Main$Paper)),
+								$elm$html$Html$Attributes$disabled(isShaking)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('✋ Papier')
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('btn rps-choice-btn'),
+								$elm$html$Html$Events$onClick(
+								$author$project$Main$PlayerChooseRPS($author$project$Main$Scissors)),
+								$elm$html$Html$Attributes$disabled(isShaking)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('✌️ Schere')
+							]))
 					]))
 			]));
 };
 var $author$project$Main$PullRussianRouletteTrigger = {$: 'PullRussianRouletteTrigger'};
 var $author$project$Main$StartRussianRouletteGame = {$: 'StartRussianRouletteGame'};
-var $elm$core$Basics$not = _Basics_not;
 var $author$project$Main$viewRouletteResult = function (state) {
 	_v0$2:
 	while (true) {
@@ -8332,6 +8905,19 @@ var $author$project$Main$viewRussianRoulette = function (model) {
 				$author$project$Main$viewRouletteResult(model.rouletteState)
 			]));
 };
+var $author$project$Main$StartSlotSpin = {$: 'StartSlotSpin'};
+var $author$project$Main$symbolToString = function (symbol) {
+	switch (symbol.$) {
+		case 'Cherry':
+			return '🍒';
+		case 'Seven':
+			return '7️⃣';
+		case 'Diamond':
+			return '💎';
+		default:
+			return '🍋';
+	}
+};
 var $author$project$Main$viewSlotMachine = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -8346,16 +8932,95 @@ var $author$project$Main$viewSlotMachine = function (model) {
 						$elm$html$Html$text('🎰 Einarmiger Bandit')
 					])),
 				A2(
-				$elm$html$Html$p,
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('roulette-status')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(model.slotMessage)
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('slot-arena')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('slot-reel', true),
+										_Utils_Tuple2('blur-animation', model.slotIsSpinning)
+									]))
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								$author$project$Main$symbolToString(model.slot1))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('slot-reel', true),
+										_Utils_Tuple2('blur-animation', model.slotIsSpinning && (model.slotSpinTicks > 3))
+									]))
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								$author$project$Main$symbolToString(model.slot2))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('slot-reel', true),
+										_Utils_Tuple2('blur-animation', model.slotIsSpinning && (model.slotSpinTicks > 6))
+									]))
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								$author$project$Main$symbolToString(model.slot3))
+							]))
+					])),
+				A2(
+				$elm$html$Html$div,
 				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$text('Status: ' + model.slotMessage)
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onClick($author$project$Main$StartSlotSpin),
+								$elm$html$Html$Attributes$class('btn action-btn'),
+								$elm$html$Html$Attributes$disabled(model.slotIsSpinning)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								model.slotIsSpinning ? 'Walzen drehen...' : 'DREHEN! (10€)')
+							]))
 					]))
 			]));
 };
 var $author$project$Main$viewStaticPage = F2(
-	function (title, description) {
+	function (titel, beschreibung) {
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -8369,14 +9034,14 @@ var $author$project$Main$viewStaticPage = F2(
 					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$text(title)
+							$elm$html$Html$text(titel)
 						])),
 					A2(
 					$elm$html$Html$p,
 					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$text(description)
+							$elm$html$Html$text(beschreibung)
 						]))
 				]));
 	});

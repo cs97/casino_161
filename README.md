@@ -1,4 +1,4 @@
-# easy startup
+# easy start
 ```
 cd build
 ```

@@ -30,7 +30,7 @@ async fn main() {
     // Shared State initialisieren (In-Memory DB)
     let shared_state: Db = Arc::new(RwLock::new(HashMap::new()));
 
-	let serve_dir = ServeDir::new("build");
+	let serve_dir = ServeDir::new("./");
 
     // Routen definieren
     let app = Router::new()

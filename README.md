@@ -1,3 +1,18 @@
+# easy startup
+```
+cd build
+```
+```
+./casino_server_linux_x86_64
+```
+
+http://127.0.0.1:3000/
+
+
+
+
+
+
 # casino_161
 build -> release
 ```

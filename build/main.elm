@@ -15,7 +15,6 @@ import Time
 
 
 -- GET / POST
--- Die API-URL als Konstante
 
 
 apiUrl : String

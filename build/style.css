@@ -1,3 +1,7 @@
+/* ==========================================
+   1. BASICS & LAYOUT
+   ========================================== */
+
 body {
     /* Ausgewählter rustikaler Holztisch */
     background-image: url('https://images.unsplash.com/photo-1506968430777-bf7784a87f23?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
@@ -118,7 +122,7 @@ body {
 }
 
 /* ==========================================
-   3. DASHBOARD GRID
+   3. DASHBOARD GRID (Einheitlicher Blackjack-Look)
    ========================================== */
 
 .casino-title { 
@@ -148,32 +152,24 @@ body {
     width: 400px;
 }
 
-.game-card {
-    background: rgba(255, 255, 255, 0.9);
-    border: 2px solid #bdc3c7;
+/* Macht alle Spielekarten im Dashboard einheitlich im edlen Blackjack-Look */
+.game-grid .game-card {
+    background: linear-gradient(135deg, #1b4d3e 0%, #0d2b22 100%) !important;
+    color: #ffd700 !important;
+    border: 2px solid #ffd700 !important;
     padding: 22px 10px;
     border-radius: 10px;
     font-size: 1.1em;
     font-weight: bold;
-    color: #2c3e50;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-.game-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-    background: #ffffff;
-    border-color: #3498db;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.coin-card {
-    background: #f1c40f;
-    color: #2c3e50;
-    border-color: #f39c12;
-}
-.coin-card:hover {
-    background: #f39c12;
+.game-grid .game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    background: linear-gradient(135deg, #225c4a 0%, #12362b 100%) !important;
 }
 
 /* ==========================================
@@ -193,6 +189,7 @@ body {
     cursor: pointer;
     font-weight: bold;
     transition: all 0.2s;
+    color: #2c3e50;
 }
 .btn.active {
     background: #4A90E2;
@@ -241,9 +238,95 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 5rem;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* MONTE SPIELFELD & ANORDNUNG */
+/* Korrektur: Die beiden Münzseiten sauber voneinander getrennt */
+.coin-side.front {
+    background: linear-gradient(135deg, #f1c40f, #f39c12);
+    color: #2c3e50;
+    border: 4px solid #ffd700;
+}
+
+.coin-side.back {
+    background: linear-gradient(135deg, #bdc3c7, #95a5a6);
+    color: #2c3e50;
+    border: 4px solid #ffffff;
+    transform: rotateY(180deg);
+}
+
+/* ==========================================
+   5. RUSSIAN ROULETTE (Vergrößerte Waffe)
+   ========================================== */
+
+.roulette-stage {
+    margin: 30px auto;
+}
+
+/* KORREKTUR: Macht den kompletten Revolveraufbau wieder wuchtig und groß */
+.revolver-container {
+    font-size: 7.5rem !important;
+    line-height: 1;
+    display: inline-block;
+    transition: transform 0.1s ease;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.revolver-barrel {
+    font-size: 1.8rem;
+    color: #7f8c8d;
+    margin-bottom: -15px;
+}
+
+/* ==========================================
+   6. SCHERE, STEIN, PAPIER (Altes Design gerettet)
+   ========================================== */
+
+.rps-arena {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 30px 0;
+}
+
+/* KORREKTUR: Bringt die freistehenden, riesigen Hände zurück */
+.rps-hand {
+    font-size: 7.5rem !important;
+    line-height: 1;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    display: inline-block;
+}
+
+/* KORREKTUR: Überschreibt die Kachelung und bringt die runden Buttons zurück */
+.rps-choices {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.rps-choices .btn.rps-choice-btn {
+    font-size: 1.2em !important;
+    padding: 12px 25px !important;
+    border-radius: 50px !important;
+    background: #ffffff !important;
+    color: #2c3e50 !important;
+    border: 3px solid #bdc3c7 !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+    font-weight: bold !important;
+    width: auto !important;
+}
+
+.rps-choices .btn.rps-choice-btn:hover {
+    background: #f1c40f !important;
+    border-color: #f39c12 !important;
+    transform: scale(1.05);
+}
+
+/* ==========================================
+   7. CARD MONTE (🃏 Find the Lady)
+   ========================================== */
+
 .monte-table {
     display: flex;
     justify-content: center;
@@ -256,9 +339,8 @@ body {
     max-width: 600px;
 }
 
-/* DIE EINZELNE KARTE (Jetzt mit perfekter Flexbox-Zentrierung) */
 .monte-card-item {
-    font-size: 6rem;        /* Etwas größer für bessere Lesbarkeit */
+    font-size: 6rem;
     line-height: 1;
     min-width: 130px;
     height: 200px;
@@ -268,26 +350,21 @@ body {
     background-color: #1e293b;
     cursor: default;
     box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-    
-    /* NEU: Garantiert absolute Zentrierung des Symbols, padding entfernt */
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0; 
-    
-    /* Unverändert: Deine perfekte Animationstransition */
     transition: transform 1.0s ease-in-out, box-shadow 0.3s ease;
 }
 
-/* KARTENFARBEN BEIM REVEAL (Namen bleiben gleich, nur Farben angepasst) */
 .monte-card-item.card-red {
-    color: #dc2626;         /* Ein sattes Casino-Rot für die Lady */
+    color: #dc2626;
     background-color: #f8fafc;
     border-color: #dc2626;
 }
 
 .monte-card-item.card-black {
-    color: #0f172a;         /* Tiefschwarz für die Asse */
+    color: #0f172a;
     background-color: #f8fafc;
     border-color: #475569;
 }
@@ -298,7 +375,6 @@ body {
     border-color: #38bdf8;
 }
 
-/* RATEMODUS: AKTIV AUSWÄHLBAR */
 .monte-card-item.clickable-guess {
     cursor: pointer;
 }
@@ -308,60 +384,126 @@ body {
     border-color: #38bdf8;
 }
 
+/* MONTE SHUFFLE ANIMATIONS */
+.monte-table.anim-none .monte-card-item { transform: translate(0, 0); }
+.monte-table.anim-swap-left-middle .monte-card-item:nth-child(1) { transform: translate(160px, 0); }
+.monte-table.anim-swap-left-middle .monte-card-item:nth-child(2) { transform: translate(-160px, 0); }
+.monte-table.anim-swap-left-middle .monte-card-item:nth-child(3) { transform: translate(0, 0); }
+.monte-table.anim-swap-middle-right .monte-card-item:nth-child(1) { transform: translate(0, 0); }
+.monte-table.anim-swap-middle-right .monte-card-item:nth-child(2) { transform: translate(160px, 0); }
+.monte-table.anim-swap-middle-right .monte-card-item:nth-child(3) { transform: translate(-160px, 0); }
+.monte-table.anim-swap-left-right .monte-card-item:nth-child(1) { transform: translate(320px, 0); }
+.monte-table.anim-swap-left-right .monte-card-item:nth-child(2) { transform: translate(0, 0); }
+.monte-table.anim-swap-left-right .monte-card-item:nth-child(3) { transform: translate(-320px, 0); }
+.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(1) { transform: translate(160px, -25px); }
+.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(2) { transform: translate(160px, 25px); }
+.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(3) { transform: translate(-320px, 0); }
 
 /* ==========================================================================
-   DIE FLÜSSIGEN MISCH-ANIMATIONEN (Kein Teleportieren!)
-   Basiert auf den mathematischen Child-Positionen (1 = Links, 2 = Mitte, 3 = Rechts)
+   8. SLOT MACHINE COMPONENT (🎰 Einarmiger Bandit)
    ========================================================================== */
 
-/* Abstands-Konstante: Da margin=15px und min-width=130px, 
-   beträgt der Abstand von Mitte-zu-Mitte genau 160px. */
-
-/* Zustand 0: Keine Bewegung */
-.monte-table.anim-none .monte-card-item {
-    transform: translate(0, 0);
+.slot-arena {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin: 35px 0;
 }
 
-/* Bewegung 1: Links und Mitte tauschen Plätze */
-.monte-table.anim-swap-left-middle .monte-card-item:nth-child(1) {
-    transform: translate(160px, 0);
-}
-.monte-table.anim-swap-left-middle .monte-card-item:nth-child(2) {
-    transform: translate(-160px, 0);
-}
-.monte-table.anim-swap-left-middle .monte-card-item:nth-child(3) {
-    transform: translate(0, 0); /* Bleibt ruhig stehen */
-}
-
-/* Bewegung 2: Mitte und Rechts tauschen Plätze */
-.monte-table.anim-swap-middle-right .monte-card-item:nth-child(1) {
-    transform: translate(0, 0); /* Bleibt ruhig stehen */
-}
-.monte-table.anim-swap-middle-right .monte-card-item:nth-child(2) {
-    transform: translate(160px, 0);
-}
-.monte-table.anim-swap-middle-right .monte-card-item:nth-child(3) {
-    transform: translate(-160px, 0);
+.slot-reel {
+    font-size: 5.5rem;
+    line-height: 1.2;
+    min-width: 110px;
+    height: 130px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s ease-in-out;
+    padding: 0;
 }
 
-/* Bewegung 3: Großer Tausch zwischen ganz Links und ganz Rechts */
-.monte-table.anim-swap-left-right .monte-card-item:nth-child(1) {
-    transform: translate(320px, 0);
-}
-.monte-table.anim-swap-left-right .monte-card-item:nth-child(2) {
-    transform: translate(0, 0); /* Mittlere Karte schaut nur zu */
-}
-.monte-table.anim-swap-left-right .monte-card-item:nth-child(3) {
-    transform: translate(-320px, 0);
+.slot-reel.blur-animation {
+    filter: blur(5px);
+    transform: scale(0.96);
+    opacity: 0.85;
 }
 
-/* Bewegung 4: Karussell (Alle drei rotieren im Uhrzeigersinn) */
-.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(1) {
-    transform: translate(160px, -25px); /* Rutscht auf die Mitte hoch */
+/* ==========================================================================
+   9. BLACKJACK MODULE STYLES
+   ========================================================================== */
+
+.blackjack-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
 }
-.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(2) {
-    transform: translate(160px, 25px);  /* Rutscht nach rechts unten */
+
+.bj-sector {
+    width: 100%;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
 }
-.monte-table.anim-rotate-clockwise .monte-card-item:nth-child(3) {
-    transform: translate(-320px, 0);     /* Zieht flach ganz nach links rüber */
+
+.dealer-sector {
+    background: rgba(255, 255, 255, 0.07);
+    border-left: 5px solid #ff9800;
+}
+
+.player-sector {
+    background: rgba(255, 255, 255, 0.12);
+    border-left: 5px solid #2196f3;
+}
+
+.bj-sector h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: #e0e0e0;
+    font-weight: 500;
+}
+
+.bj-hand-display {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 100px;
+}
+
+.bj-card-render {
+    font-size: 5.5rem;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow: 2px 4px 6px rgba(0, 0, 0, 0.4);
+    display: inline-block;
+    animation: bjCardPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.bj-controls {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    width: 100%;
+    justify-content: center;
+}
+
+.bj-hit-btn { background: #4caf50 !important; }
+.bj-hit-btn:hover { background: #45a049 !important; }
+.bj-stand-btn { background: #ff9800 !important; }
+.bj-stand-btn:hover { background: #e68a00 !important; }
+.bj-reset-btn { background: #00bcd4 !important; width: auto; padding: 12px 30px; }
+
+@keyframes bjCardPop {
+    0% { transform: scale(0.5) translateY(20px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
 }

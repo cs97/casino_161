@@ -41,10 +41,10 @@ async fn main() {
         .with_state(shared_state);
 
     // Server starten
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3030")
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3030")
         .await
         .unwrap();
-    println!("Server läuft auf http://127.0.0.1:3030");
+    println!("Server läuft auf http://0.0.0.0:3030");
     axum::serve(listener, app).await.unwrap();
 }
 

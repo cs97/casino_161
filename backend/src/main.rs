@@ -41,10 +41,10 @@ async fn main() {
         .with_state(shared_state);
 
     // Server starten
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3030")
         .await
         .unwrap();
-    println!("Server läuft auf http://127.0.0.1:3000");
+    println!("Server läuft auf http://127.0.0.1:3030");
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -85,4 +85,3 @@ async fn update_score(
 async fn ping() -> &'static str {
     "pong"
 }
-

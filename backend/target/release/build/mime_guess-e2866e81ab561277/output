@@ -1,0 +1,1 @@
+cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/home/rax/proggen/casino_161/backend/target/release/build/mime_guess-e2866e81ab561277/out/mime_types_generated.rs

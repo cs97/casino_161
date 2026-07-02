@@ -5,46 +5,12 @@ import Html exposing (Html, button, div, h1, h2, h3, option, p, select, span, te
 import Html.Attributes exposing (class, classList, disabled, style, value)
 import Html.Events exposing (onClick, onInput)
 import Html.Keyed as Keyed
-import Http
-import Json.Decode as Decode
-import Json.Encode as Encode
 import Process
 import Random
+import Svg exposing (Svg, circle, g, path, polygon, svg, text_)
+import Svg.Attributes exposing (cx, cy, d, fill, fontSize, r, stroke, strokeWidth, textAnchor, transform, viewBox, x, y)
 import Task
 import Time
-
-
--- GET / POST
-
-
-apiUrl : String
-apiUrl =
-    "http://127.0.0.1:3000/score/spieler1"
-
-
-
--- 1. FUNKTION: Punkte abrufen (GET)
-
-
-getScore : (Result Http.Error Int -> msg) -> Cmd msg
-getScore toMsg =
-    Http.get
-        { url = apiUrl
-        , expect = Http.expectJson toMsg (Decode.field "score" Decode.int)
-        }
-
-
-
--- 2. FUNKTION: Punkte setzen (POST)
-
-
-postScore : Int -> (Result Http.Error Int -> msg) -> Cmd msg
-postScore neuerScore toMsg =
-    Http.post
-        { url = apiUrl
-        , body = Http.jsonBody (Encode.object [ ( "score", Encode.int neuerScore ) ])
-        , expect = Http.expectJson toMsg (Decode.field "score" Decode.int)
-        }
 
 
 
@@ -174,6 +140,42 @@ type BjCard
     | BjKing
 
 
+
+-- GLÜCKSRAD TYPEN
+
+
+type WheelState
+    = WheelIdle
+    | WheelSpinning
+    | WheelResult WheelSector
+
+
+type alias WheelSector =
+    { id : Int
+    , label : String
+    , multiplier : Float
+    , color : String
+    , textCol : String
+    }
+
+
+
+-- Die 8 Sektoren des Glücksrads exakt nach mathematischer Anordnung definiert
+
+
+wheelSectors : List WheelSector
+wheelSectors =
+    [ { id = 0, label = "JACKPOT", multiplier = 7.5, color = "#ffcc00", textCol = "#000" } -- 0° bis 45°
+    , { id = 1, label = "NIETE", multiplier = 0.0, color = "#d9534f", textCol = "#fff" } -- 45° bis 90°
+    , { id = 2, label = "2x GEWINN", multiplier = 2.0, color = "#5cb85c", textCol = "#fff" } -- 90° bis 135°
+    , { id = 3, label = "NIETE", multiplier = 0.0, color = "#d9534f", textCol = "#fff" } -- 135° bis 180°
+    , { id = 4, label = "3x GEWINN", multiplier = 3.0, color = "#f0ad4e", textCol = "#fff" } -- 180° bis 225°
+    , { id = 5, label = "NIETE", multiplier = 0.0, color = "#d9534f", textCol = "#fff" } -- 225° bis 270°
+    , { id = 6, label = "4x GEWINN", multiplier = 4.0, color = "#5bc0de", textCol = "#fff" } -- 270° bis 315°
+    , { id = 7, label = "NIETE", multiplier = 0.0, color = "#d9534f", textCol = "#fff" } -- 315° bis 360°
+    ]
+
+
 type Page
     = Dashboard
     | CoinFlip
@@ -182,15 +184,35 @@ type Page
     | CardMonte
     | SlotMachine
     | Blackjack
+    | WheelOfFortune -- Ersetzt Spiel 7 Platzhalter
     | Leaderboard
     | Shop
     | GamePlaceholder Int
 
 
+type alias Charm =
+    { id : Int
+    , name : String
+    , multiplier : Float
+    , price : Int
+    , icon : String
+    }
+
+
+availableCharms : List Charm
+availableCharms =
+    [ { id = 1, name = "Kleeblatt", multiplier = 1.1, price = 300, icon = "🍀" }
+    , { id = 2, name = "Hufeisen", multiplier = 1.3, price = 800, icon = "🐴" }
+    , { id = 3, name = "Glückspilz", multiplier = 1.5, price = 1200, icon = "🍄" }
+    , { id = 4, name = "Marienkäfer", multiplier = 1.8, price = 2000, icon = "🐞" }
+    , { id = 5, name = "Hasenpfote", multiplier = 2.0, price = 2500, icon = "🐾" }
+    ]
+
+
 type alias Model =
     { currentPage : Page
     , balance : Int
-    , dropdownOpen : Bool
+    , dropdownValue : String
 
     -- CoinFlip
     , coinSelection : Side
@@ -229,14 +251,21 @@ type alias Model =
     , bjPlayerHand : List BjCard
     , bjDealerHand : List BjCard
     , bjState : BjGameState
+
+    -- Glücksrad (Neu)
+    , wheelState : WheelState
+    , wheelRotation : Float
+
+    -- Shop System Global Storage
+    , ownedCharmIds : List Int
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { currentPage = Dashboard
-      , balance = 100 -- Fallback-Wert, falls die API fehlschlägt
-      , dropdownOpen = False
+      , balance = 100
+      , dropdownValue = ""
 
       -- CoinFlip
       , coinSelection = Head
@@ -275,9 +304,51 @@ init _ =
       , bjPlayerHand = []
       , bjDealerHand = []
       , bjState = BjPlayerTurn
+
+      -- Glücksrad
+      , wheelState = WheelIdle
+      , wheelRotation = 0.0
+
+      -- Shop
+      , ownedCharmIds = []
       }
-    , getScore GotInitialScore -- Ruft den Score direkt beim Start ab
+    , Cmd.none
     )
+
+
+
+-- HELPER FUNCTIONS FOR CHARMS / MULTIPLIERS
+
+
+getActiveMultiplier : Model -> Float
+getActiveMultiplier model =
+    availableCharms
+        |> List.filter (\charm -> List.member charm.id model.ownedCharmIds)
+        |> List.map .multiplier
+        |> List.maximum
+        |> Maybe.withDefault 1.0
+
+
+getActiveCharmName : Model -> String
+getActiveCharmName model =
+    availableCharms
+        |> List.filter (\charm -> List.member charm.id model.ownedCharmIds)
+        |> List.sortBy .multiplier
+        |> List.reverse
+        |> List.head
+        |> Maybe.map .name
+        |> Maybe.withDefault "Keiner"
+
+
+getActiveCharmIcon : Model -> String
+getActiveCharmIcon model =
+    availableCharms
+        |> List.filter (\charm -> List.member charm.id model.ownedCharmIds)
+        |> List.sortBy .multiplier
+        |> List.reverse
+        |> List.head
+        |> Maybe.map .icon
+        |> Maybe.withDefault "🎲"
 
 
 
@@ -287,13 +358,10 @@ init _ =
 type Msg
     = NavigateTo Page
     | SelectDropdown String
-      -- API Initialisierung
-    | GotInitialScore (Result Http.Error Int)
-    | GotPostScoreResult (Result Http.Error Int) -- NEU: Für die Antwort des POST-Requests
       -- CoinFlip
     | SelectCoinSide Side
     | StartCoinSpin
-    | CalculateCoinFlipResult Side
+    | CalculateCoinFlipResult Int
     | RevealCoinResult { won : Bool, landedOn : Side }
       -- RussianRoulette
     | StartRussianRouletteGame
@@ -324,63 +392,55 @@ type Msg
     | BjStand
     | BjDealerDrewCard BjCard
     | BjRestart
+      -- Glücksrad (Neu)
+    | StartWheelSpin
+    | CalculateWheelResult Int
+    | RevealWheelResult WheelSector Float
+      -- Shop Interaction
+    | BuyCharm Charm
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GotInitialScore result ->
-            case result of
-                Ok initialScore ->
-                    ( { model | balance = initialScore }, Cmd.none )
-
-                Err _ ->
-                    ( model, Cmd.none )
-
-        GotPostScoreResult result ->
-            -- Hier fangen wir die API-Antwort nach dem Senden ab.
-            -- Falls die API den neuen Stand validiert zurückgibt, könnte man ihn hier setzen.
-            -- Im Fehlerfall machen wir aktuell nichts, um den Spielfluss nicht zu stören.
-            case result of
-                Ok aktuellerScoreVonApi ->
-                    ( { model | balance = aktuellerScoreVonApi }, Cmd.none )
-
-                Err _ ->
-                    ( model, Cmd.none )
-
         NavigateTo page ->
+            let
+                baseModel =
+                    { model | dropdownValue = "" }
+            in
             if page == RussianRoulette then
-                ( { model | currentPage = page, rouletteState = RouletteIdle, rouletteTurn = PlayerTurn, rouletteRotation = 180, currentShot = 1 }
+                ( { baseModel | currentPage = page, rouletteState = RouletteIdle, rouletteTurn = PlayerTurn, rouletteRotation = 180, currentShot = 1 }
                 , Random.generate SetupRussianRouletteBullet (Random.int 1 6)
                 )
 
             else if page == RockPaperScissors then
-                ( { model | currentPage = page, rpsState = RPSIdle, rpsPlayerChoice = None, rpsDealerChoice = None, rpsPlayerScore = 0, rpsDealerScore = 0 }, Cmd.none )
+                ( { baseModel | currentPage = page, rpsState = RPSIdle, rpsPlayerChoice = None, rpsDealerChoice = None, rpsPlayerScore = 0, rpsDealerScore = 0 }, Cmd.none )
 
             else if page == CardMonte then
-                ( { model | currentPage = page, monteState = MonteIdle, shuffleRound = 0, currentShuffleType = NoShuffle, monteCards = [ { id = CardA, isTarget = False }, { id = CardB, isTarget = True }, { id = CardC, isTarget = False } ] }, Cmd.none )
+                ( { baseModel | currentPage = page, monteState = MonteIdle, shuffleRound = 0, currentShuffleType = NoShuffle, monteCards = [ { id = CardA, isTarget = False }, { id = CardB, isTarget = True }, { id = CardC, isTarget = False } ] }, Cmd.none )
 
             else if page == SlotMachine then
-                ( { model | currentPage = page, slotIsSpinning = False, slotSpinTicks = 0, slotMessage = "Drücke auf Drehen! (Kostet 10 €)" }, Cmd.none )
+                ( { baseModel | currentPage = page, slotIsSpinning = False, slotSpinTicks = 0, slotMessage = "Drücke auf Drehen! (Kostet 10 €)" }, Cmd.none )
 
             else if page == Blackjack then
-                ( { model | currentPage = page, bjPlayerHand = [], bjDealerHand = [], bjState = BjPlayerTurn }
-                , Cmd.none
-                )
+                ( { baseModel | currentPage = page, bjPlayerHand = [], bjDealerHand = [], bjState = BjPlayerTurn }, Cmd.none )
+
+            else if page == WheelOfFortune then
+                ( { baseModel | currentPage = page, wheelState = WheelIdle, wheelRotation = 0.0 }, Cmd.none )
 
             else
-                ( { model | currentPage = page }, Cmd.none )
+                ( { baseModel | currentPage = page }, Cmd.none )
 
         SelectDropdown val ->
             case val of
                 "leaderboard" ->
-                    ( { model | currentPage = Leaderboard }, Cmd.none )
+                    ( { model | currentPage = Leaderboard, dropdownValue = "" }, Cmd.none )
 
                 "shop" ->
-                    ( { model | currentPage = Shop }, Cmd.none )
+                    ( { model | currentPage = Shop, dropdownValue = "" }, Cmd.none )
 
                 _ ->
-                    ( model, Cmd.none )
+                    ( { model | dropdownValue = "" }, Cmd.none )
 
         -- COINFLIP
         SelectCoinSide side ->
@@ -397,15 +457,34 @@ update msg model =
                     ( model, Cmd.none )
 
                 _ ->
-                    ( { model | coinGameState = Spinning }, Random.generate CalculateCoinFlipResult randomSide )
+                    ( { model | coinGameState = Spinning }, Random.generate CalculateCoinFlipResult (Random.int 1 100) )
 
-        CalculateCoinFlipResult side ->
+        CalculateCoinFlipResult diceRoll ->
             let
+                multiplier =
+                    getActiveMultiplier model
+
+                winningThreshold =
+                    Basics.min 100 (Basics.round (50.0 * multiplier))
+
+                won =
+                    diceRoll <= winningThreshold
+
+                landedSide =
+                    if won then
+                        model.coinSelection
+
+                    else if model.coinSelection == Head then
+                        Tail
+
+                    else
+                        Head
+
                 currentFullTurns =
                     model.coinRotationDegrees // 360
 
                 targetExtra =
-                    if side == Head then
+                    if landedSide == Head then
                         0
 
                     else
@@ -413,12 +492,9 @@ update msg model =
 
                 newRotation =
                     (currentFullTurns * 360) + 1800 + targetExtra
-
-                won =
-                    model.coinSelection == side
             in
             ( { model | coinRotationDegrees = newRotation }
-            , Process.sleep 2000 |> Task.perform (\_ -> RevealCoinResult { won = won, landedOn = side })
+            , Process.sleep 2000 |> Task.perform (\_ -> RevealCoinResult { won = won, landedOn = landedSide })
             )
 
         RevealCoinResult resultData ->
@@ -430,9 +506,7 @@ update msg model =
                     else
                         model.balance - 10
             in
-            ( { model | coinGameState = Result resultData, balance = newBalance }
-            , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API
-            )
+            ( { model | coinGameState = Result resultData, balance = newBalance }, Cmd.none )
 
         -- RUSSIAN ROULETTE
         SetupRussianRouletteBullet chamber ->
@@ -454,23 +528,32 @@ update msg model =
                     ( model, Cmd.none )
 
         TriggerRussianRouletteAnimationFinish ->
-            if model.currentShot == model.bulletChamber then
+            let
+                multiplier =
+                    getActiveMultiplier model
+
+                isDeadShot =
+                    model.currentShot == model.bulletChamber
+
+                finalDeathHit =
+                    if isDeadShot then
+                        (1.0 / multiplier) >= 1.0
+
+                    else
+                        False
+            in
+            if isDeadShot && finalDeathHit then
                 case model.rouletteTurn of
                     PlayerTurn ->
-                        let
-                            newBalance = model.balance - 1000
-                        in
-                        ( { model | rouletteState = RouletteDead PlayerTurn, balance = newBalance }
-                        , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API
-                        )
+                        ( { model | rouletteState = RouletteDead PlayerTurn, balance = model.balance - 1000 }, Cmd.none )
 
                     DealerTurn ->
-                        let
-                            newBalance = model.balance + 1000
-                        in
-                        ( { model | rouletteState = RouletteWon, balance = newBalance }
-                        , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API
-                        )
+                        ( { model | rouletteState = RouletteWon, balance = model.balance + 1000 }, Cmd.none )
+
+            else if isDeadShot && not finalDeathHit && model.rouletteTurn == PlayerTurn then
+                ( { model | rouletteTurn = DealerTurn, rouletteRotation = 0, rouletteState = RouletteIdle, currentShot = model.currentShot + 1 }
+                , Process.sleep 1500 |> Task.perform (\_ -> RussianRouletteDealerAutoPlay)
+                )
 
             else
                 case model.rouletteTurn of
@@ -503,10 +586,26 @@ update msg model =
         ResolveRPSRound pChoice ->
             ( model, Random.generate GenerateDealerChoice randomRPS )
 
-        GenerateDealerChoice dChoice ->
+        GenerateDealerChoice generatedChoice ->
             let
+                multiplier =
+                    getActiveMultiplier model
+
                 pChoice =
                     model.rpsPlayerChoice
+
+                dChoice =
+                    if multiplier > 1.0 && (pChoice == Rock && generatedChoice == Paper) then
+                        Scissors
+
+                    else if multiplier > 1.0 && (pChoice == Paper && generatedChoice == Scissors) then
+                        Rock
+
+                    else if multiplier > 1.0 && (pChoice == Scissors && generatedChoice == Rock) then
+                        Paper
+
+                    else
+                        generatedChoice
 
                 roundRes =
                     if pChoice == dChoice then
@@ -553,12 +652,7 @@ update msg model =
                         _ ->
                             model.balance
             in
-            ( { model | rpsState = nextState, rpsDealerChoice = dChoice, rpsPlayerScore = newPScore, rpsDealerScore = newDScore, balance = newBalance }
-            , if newBalance /= model.balance then
-                postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (nur wenn sich die Balance geändert hat)
-              else
-                Cmd.none
-            )
+            ( { model | rpsState = nextState, rpsDealerChoice = dChoice, rpsPlayerScore = newPScore, rpsDealerScore = newDScore, balance = newBalance }, Cmd.none )
 
         -- CARD MONTE
         StartMonteGame ->
@@ -606,9 +700,7 @@ update msg model =
                     else
                         model.balance - 20
             in
-            ( { model | monteState = MonteResult isCorrect, balance = newBalance }
-            , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API
-            )
+            ( { model | monteState = MonteResult isCorrect, balance = newBalance }, Cmd.none )
 
         -- SLOT MACHINE
         StartSlotSpin ->
@@ -619,16 +711,13 @@ update msg model =
                 ( { model | slotMessage = "Nicht genug Geld! Geh zurück zum Dashboard." }, Cmd.none )
 
             else
-                let
-                    newBalance = model.balance - 10
-                in
                 ( { model
-                    | balance = newBalance
+                    | balance = model.balance - 10
                     , slotMessage = "Die Walzen laufen..."
                     , slotIsSpinning = True
                     , slotSpinTicks = 0
                   }
-                , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (Einsatz abgebucht)
+                , Cmd.none
                 )
 
         SlotTick _ ->
@@ -644,9 +733,19 @@ update msg model =
 
             else
                 let
+                    multiplier =
+                        getActiveMultiplier model
+
+                    ( finalS1, finalS2, finalS3 ) =
+                        if multiplier > 1.0 && s1 /= s2 && s2 /= s3 && s1 /= s3 then
+                            ( s1, s1, s3 )
+
+                        else
+                            ( s1, s2, s3 )
+
                     ( winAmount, msgText ) =
-                        if s1 == s2 && s2 == s3 then
-                            case s1 of
+                        if finalS1 == finalS2 && finalS2 == finalS3 then
+                            case finalS1 of
                                 Seven ->
                                     ( 100, "JACKPOT! 3 Siebenen! +100 €!" )
 
@@ -659,26 +758,21 @@ update msg model =
                                 Lemon ->
                                     ( 30, "Sauer bringt Geld! 3 Zitronen! +30 €!" )
 
-                        else if s1 == s2 || s2 == s3 || s1 == s3 then
+                        else if finalS1 == finalS2 || finalS2 == finalS3 || finalS1 == finalS3 then
                             ( 15, "Paar! +15 €." )
 
                         else
                             ( 0, "Leider verloren. Versuch es noch einmal!" )
-                    
-                    newBalance = model.balance + winAmount
                 in
                 ( { model
-                    | slot1 = s1
-                    , slot2 = s2
-                    , slot3 = s3
-                    , balance = newBalance
+                    | slot1 = finalS1
+                    , slot2 = finalS2
+                    , slot3 = finalS3
+                    , balance = model.balance + winAmount
                     , slotMessage = msgText
                     , slotIsSpinning = False
                   }
-                , if winAmount > 0 then 
-                    postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (Gewinn gutgeschrieben)
-                  else 
-                    Cmd.none
+                , Cmd.none
                 )
 
         -- BLACKJACK INTERACTION
@@ -694,8 +788,21 @@ update msg model =
 
         BjPlayerDrewCard newCard ->
             let
+                multiplier =
+                    getActiveMultiplier model
+
+                currentScoreWithoutNewCard =
+                    bjCalculateScore model.bjPlayerHand
+
+                mitigatedCard =
+                    if multiplier > 1.2 && (currentScoreWithoutNewCard + bjCardValue newCard) > 21 then
+                        BjAce
+
+                    else
+                        newCard
+
                 newHand =
-                    newCard :: model.bjPlayerHand
+                    mitigatedCard :: model.bjPlayerHand
 
                 score =
                     bjCalculateScore newHand
@@ -731,15 +838,98 @@ update msg model =
                 ( { model | currentPage = Dashboard }, Cmd.none )
 
             else
-                let
-                    newBalance = model.balance - 20
-                in
-                ( { model | bjPlayerHand = [], bjDealerHand = [], bjState = BjPlayerTurn, balance = newBalance }
-                , Cmd.batch 
-                    [ Random.generate BjInitialDraw (Random.pair bjCardGenerator bjCardGenerator)
-                    , postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (Einsatz abgebucht)
-                    ]
+                ( { model | bjPlayerHand = [], bjDealerHand = [], bjState = BjPlayerTurn, balance = model.balance - 20 }
+                , Random.generate BjInitialDraw (Random.pair bjCardGenerator bjCardGenerator)
                 )
+
+        -- GLÜCKSRAD LOGIK (NEU)
+        StartWheelSpin ->
+            if model.wheelState == WheelSpinning then
+                ( model, Cmd.none )
+
+            else if model.balance < 20 then
+                ( model, Cmd.none )
+                -- Verhindert Drehen ohne Geld
+
+            else
+                -- 20€ sofort abziehen vor dem Drehen!
+                ( { model
+                    | balance = model.balance - 20
+                    , wheelState = WheelSpinning
+                  }
+                , Random.generate CalculateWheelResult (Random.int 0 7)
+                )
+
+        CalculateWheelResult targetSectorId ->
+            let
+                -- Finde das ausgewählte Segment aus der Definitionsliste
+                selectedSector =
+                    wheelSectors
+                        |> List.filter (\s -> s.id == targetSectorId)
+                        |> List.head
+                        |> Maybe.withDefault { id = 1, label = "NIETE", multiplier = 0.0, color = "#d9534f", textCol = "#fff" }
+
+                -- Ein Segment ist genau 45° breit (360° / 8)
+                sectorAngle = 45.0
+                
+                -- Der Stopper befindet sich oben bei 270°.
+                -- Da SVG-Kreise bei 3 Uhr (0°) starten und im Uhrzeigersinn laufen,
+                -- müssen wir berechnen, wie weit das Zielfeld gedreht werden muss, damit es oben landet.
+                -- Formel für exakte visuelle Synchronität mit dem oberen Pfeil:
+                targetAngle = 270.0 - (toFloat targetSectorId * sectorAngle) - (sectorAngle / 2.0)
+                
+                -- Wir addieren einen massiven Basisschwung (6 volle Umdrehungen = 2160°),
+                -- damit sich das Rad immer rasant und kräftig dreht.
+                baseSpin = 2160.0
+                
+                -- Der neue Gesamtwinkel berechnet sich aus dem aktuellen Stand + Schwung + Zielversatz
+                finalRotation = model.wheelRotation + baseSpin + (targetAngle - (model.wheelRotation - (toFloat (Basics.floor model.wheelRotation // 360) * 360.0)))
+            in
+            ( { model | wheelRotation = finalRotation }
+            , Process.sleep 3000 |> Task.perform (\_ -> RevealWheelResult selectedSector finalRotation)
+            )
+
+        RevealWheelResult sector finalAngle ->
+            let
+                -- Eventuelle Shop-Multiplikatoren einrechnen (falls erwünscht, sonst rein Basiswert)
+                charmMult =
+                    getActiveMultiplier model
+
+                payout =
+                    Basics.round (20.0 * sector.multiplier * charmMult)
+
+                newBalance =
+                    model.balance + payout
+            in
+            ( { model
+                | wheelState = WheelResult sector
+                , balance = newBalance
+
+                -- Modulo 360 halten, damit nachfolgende Spins weich laufen
+                , wheelRotation = finalAngle
+              }
+            , Cmd.none
+            )
+
+        -- SHOP KAUFLOGIK
+        BuyCharm charm ->
+            let
+                alreadyOwned =
+                    List.member charm.id model.ownedCharmIds
+
+                canAfford =
+                    model.balance >= charm.price
+            in
+            if canAfford && not alreadyOwned then
+                ( { model
+                    | balance = model.balance - charm.price
+                    , ownedCharmIds = charm.id :: model.ownedCharmIds
+                  }
+                , Cmd.none
+                )
+
+            else
+                ( model, Cmd.none )
 
 
 updateDealer : Model -> ( Model, Cmd Msg )
@@ -782,15 +972,8 @@ updateDealer model =
 
                     _ ->
                         0
-            
-            newBalance = model.balance + payout
         in
-        ( { model | bjState = finalState, balance = newBalance }
-        , if payout > 0 then
-            postScore newBalance GotPostScoreResult -- AKTUALISIERT AN DIE API (Gewinn/Push ausgezahlt)
-          else
-            Cmd.none
-        )
+        ( { model | bjState = finalState, balance = model.balance + payout }, Cmd.none )
 
 
 randomSide : Random.Generator Side
@@ -937,58 +1120,76 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div
-        [ classList
-            [ ( "game-container", True )
-            , ( "dashboard-active", model.currentPage == Dashboard )
-            ]
+        [ style "width" "100vw"
+        , style "height" "100vh"
+        , style "display" "flex"
+        , style "justify-content" "center"
+        , style "align-items" "center"
+        , style "position" "relative"
         ]
-        [ -- TOP BAR
+        [ -- TOP BAR: Bleibt absolut oben fixiert auf dem Holz
           div [ class "top-bar" ]
             [ button [ class "nav-home-btn", onClick (NavigateTo Dashboard) ] [ text "Home" ]
             , div [ class "top-right-controls" ]
-                [ div [ class "balance-display" ] [ text (String.fromInt model.balance ++ " €") ]
-                , select [ class "nav-dropdown", onInput SelectDropdown ]
+                [ div [ class "charm-indicator" ] [ text (getActiveCharmIcon model ++ " " ++ getActiveCharmName model ++ " (" ++ String.fromFloat (getActiveMultiplier model) ++ "x)") ]
+                , div
+                    [ classList
+                        [ ( "balance-display", True )
+                        , ( "balance-positive", model.balance >= 0 )
+                        , ( "balance-negative", model.balance < 0 )
+                        ]
+                    ]
+                    [ text (String.fromInt model.balance ++ " €") ]
+                , select [ class "nav-dropdown", onInput SelectDropdown, value model.dropdownValue ]
                     [ option [ value "" ] [ text "Menü" ]
                     , option [ value "leaderboard" ] [ text "Bestenliste" ]
-                    , option [ value "shop" ] [ text "🛒 Shop" ]
+                    , option [ value "shop" ] [ text "\u{1F6D2} Shop" ]
                     ]
                 ]
             ]
 
-        -- ROUTING
-        , case model.currentPage of
-            Dashboard ->
-                viewDashboard
+        -- GAME CONTAINER: Roter Samt/Filz für die Spiele
+        , div
+            [ classList
+                [ ( "game-container", True )
+                , ( "dashboard-active", model.currentPage == Dashboard )
+                ]
+            ]
+            [ case model.currentPage of
+                Dashboard ->
+                    viewDashboard
 
-            CoinFlip ->
-                viewCoinFlip model
+                CoinFlip ->
+                    viewCoinFlip model
 
-            RussianRoulette ->
-                viewRussianRoulette model
+                RussianRoulette ->
+                    viewRussianRoulette model
 
-            RockPaperScissors ->
-                viewRockPaperScissors model
+                RockPaperScissors ->
+                    viewRockPaperScissors model
 
-            CardMonte ->
-                viewCardMonte model
+                CardMonte ->
+                    viewCardMonte model
 
-            SlotMachine ->
-                viewSlotMachine model
+                SlotMachine ->
+                    viewSlotMachine model
 
-            Blackjack ->
-                viewBlackjack model
+                Blackjack ->
+                    viewBlackjack model
 
-            Leaderboard ->
-                viewStaticPage "Bestenliste" "Hier entstehen bald die Highscores der reichsten Spieler!"
+                WheelOfFortune ->
+                    viewWheelOfFortune model
 
-            Shop ->
-                viewStaticPage "🛒 VIP Shop" "Hier kannst du bald virtuelle Goodies für deine Euro kaufen."
+                Leaderboard ->
+                    viewStaticPage "Bestenliste" "Hier entstehen bald die Highscores der reichsten Spieler!"
 
-            GamePlaceholder id ->
-                viewStaticPage ("Spiel " ++ String.fromInt id) "Dieses Spiel befindet sich aktuell noch in der Entwicklung!"
+                Shop ->
+                    viewShop model
+
+                GamePlaceholder id ->
+                    viewStaticPage ("Spiel " ++ String.fromInt id) "Dieses Spiel befindet sich aktuell noch in der Entwicklung!"
+            ]
         ]
-
-
 
 
 
@@ -1001,13 +1202,13 @@ viewDashboard =
         [ h1 [ class "casino-title" ] [ text "CASINO 161" ]
         , p [ class "casino-subtitle" ] [ text "Wähle ein Spiel und fordere dein Glück heraus!" ]
         , div [ class "game-grid" ]
-            [ button [ class "game-card coin-card", onClick (NavigateTo CoinFlip) ] [ text "🪙 Drehmünze" ]
+            [ button [ class "game-card coin-card", onClick (NavigateTo CoinFlip) ] [ text "\u{1FA99} Drehmünze" ]
             , button [ class "game-card roulette-card", onClick (NavigateTo RussianRoulette) ] [ text "🔫 Russisch Roulette" ]
             , button [ class "game-card rps-card", onClick (NavigateTo RockPaperScissors) ] [ text "✂️ Schere Stein Papier" ]
             , button [ class "game-card monte-card", onClick (NavigateTo CardMonte) ] [ text "🃏 Find the Lady" ]
             , button [ class "game-card slot-card", onClick (NavigateTo SlotMachine) ] [ text "🎰 Einarmiger Bandit" ]
             , button [ class "game-card blackjack-card", onClick (NavigateTo Blackjack) ] [ text "🃏 Blackjack" ]
-            , button [ class "game-card", onClick (NavigateTo (GamePlaceholder 7)) ] [ text "💥 Spiel 7" ]
+            , button [ class "game-card wheel-card", onClick (NavigateTo WheelOfFortune) ] [ text "🎡 Glücksrad (SVG)" ]
             , button [ class "game-card", onClick (NavigateTo (GamePlaceholder 8)) ] [ text "💎 Spiel 8" ]
             ]
         ]
@@ -1020,7 +1221,7 @@ viewDashboard =
 viewCoinFlip : Model -> Html Msg
 viewCoinFlip model =
     div []
-        [ h2 [] [ text "🪙 Drehmünze" ]
+        [ h2 [] [ text "\u{1FA99} Drehmünze" ]
         , div [ class "selection-zone" ]
             [ button [ classList [ ( "btn", True ), ( "active", model.coinSelection == Head ) ], onClick (SelectCoinSide Head), disabled (model.coinGameState == Spinning) ] [ text "Kopf" ]
             , button [ classList [ ( "btn", True ), ( "active", model.coinSelection == Tail ) ], onClick (SelectCoinSide Tail), disabled (model.coinGameState == Spinning) ] [ text "Zahl" ]
@@ -1157,15 +1358,15 @@ viewRouletteResult : RussianRouletteState -> Html Msg
 viewRouletteResult state =
     case state of
         RouletteWon ->
-            div [ class "result-message" ] [ h2 [ class "text-success" ] [ text "🎉 +1000€ Gewonnen!" ] ]
+            div [ class "result-message" ]
+                [ h2 [ class "text-success" ] [ text "🎉 +1000€ Gewonnen!" ] ]
 
         RouletteDead PlayerTurn ->
-            div [ class "result-message" ] [ h2 [ class "text-danger" ] [ text "😢 -1000€ Verloren." ] ]
+            div [ class "result-message" ]
+                [ h2 [ class "text-danger" ] [ text "😢 -1000€ Verloren." ] ]
 
         _ ->
             div [ class "result-message placeholder" ] []
-
-
 
 
 
@@ -1219,7 +1420,7 @@ viewRockPaperScissors model =
                     "Punkt für dich! 🎉"
 
                 RPSShowingRound RoundDealerWins ->
-                    "Punkt für den Gegner! 🤖"
+                    "Punkt für den Gegner! \u{1F916}"
 
                 RPSShowingRound RoundNone ->
                     ""
@@ -1232,32 +1433,22 @@ viewRockPaperScissors model =
     in
     div []
         [ h2 [] [ text "✂️ Schere Stein Papier" ]
-
-        -- Scoreboard
         , div [ class "rps-scoreboard" ]
             [ div [ class "score-box" ] [ p [] [ text "Du" ], h1 [] [ text (String.fromInt model.rpsPlayerScore) ] ]
             , div [ class "score-divider" ] [ text "VS" ]
             , div [ class "score-box" ] [ p [] [ text "Gegner" ], h1 [] [ text (String.fromInt model.rpsDealerScore) ] ]
             ]
-
-        -- Status
         , div [ class "roulette-status" ] [ text statusText ]
-
-        -- Arena
         , div [ class "rps-arena" ]
             [ div [ class "rps-hand-wrapper" ]
                 [ p [] [ text "Deine Hand" ]
-                , div [ classList [ ( "rps-hand player-hand", True ), ( "hand-shake", isShaking ) ] ]
-                    [ text (toEmoji model.rpsPlayerChoice isShaking) ]
+                , div [ classList [ ( "rps-hand player-hand", True ), ( "hand-shake", isShaking ) ] ] [ text (toEmoji model.rpsPlayerChoice isShaking) ]
                 ]
             , div [ class "rps-hand-wrapper" ]
                 [ p [] [ text "Gegner" ]
-                , div [ classList [ ( "rps-hand dealer-hand", True ), ( "hand-shake", isShaking ) ] ]
-                    [ text (toEmoji model.rpsDealerChoice isShaking) ]
+                , div [ classList [ ( "rps-hand dealer-hand", True ), ( "hand-shake", isShaking ) ] ] [ text (toEmoji model.rpsDealerChoice isShaking) ]
                 ]
             ]
-
-        -- Interaktion
         , if isGameOver then
             button [ class "btn action-btn rps-btn-reset", onClick StartRPSGame ] [ text "Neues Match starten (20€)" ]
 
@@ -1378,9 +1569,7 @@ viewCardMonte model =
     div []
         [ h2 [] [ text "🃏 Find the Lady" ]
         , div [ class "roulette-status" ] [ text statusText ]
-        , Keyed.node "div"
-            [ class "monte-table", class animationClass ]
-            (List.map renderKeyedCard model.monteCards)
+        , Keyed.node "div" [ class "monte-table", class animationClass ] (List.map renderKeyedCard model.monteCards)
         , case model.monteState of
             MonteIdle ->
                 button [ class "btn action-btn monte-start-btn", onClick StartMonteGame ] [ text "Karten aufdecken & Mischen (Kostenlos)" ]
@@ -1424,11 +1613,7 @@ viewSlotMachine model =
             , div [ classList [ ( "slot-reel", True ), ( "blur-animation", model.slotIsSpinning && model.slotSpinTicks > 6 ) ] ] [ text (symbolToString model.slot3) ]
             ]
         , div []
-            [ button
-                [ onClick StartSlotSpin
-                , class "btn action-btn"
-                , disabled model.slotIsSpinning
-                ]
+            [ button [ onClick StartSlotSpin, class "btn action-btn", disabled model.slotIsSpinning ]
                 [ text
                     (if model.slotIsSpinning then
                         "Walzen drehen..."
@@ -1449,33 +1634,20 @@ viewBlackjack : Model -> Html Msg
 viewBlackjack model =
     div [ class "blackjack-container" ]
         [ h2 [] [ text "🃏 Blackjack (Casino Edition)" ]
-        , div [ class "roulette-status" ]
-            [ text (viewBjStatus model.bjState) ]
-
-        -- DEALER AREA
+        , div [ class "roulette-status" ] [ text (viewBjStatus model.bjState) ]
         , div [ class "bj-sector dealer-sector" ]
             [ h3 [] [ text ("Dealer (Punkte: " ++ String.fromInt (bjCalculateScore model.bjDealerHand) ++ ")") ]
-            , div [ class "bj-hand-display" ]
-                (List.map viewBjCard (List.reverse model.bjDealerHand))
+            , div [ class "bj-hand-display" ] (List.map viewBjCard (List.reverse model.bjDealerHand))
             ]
-
-        -- PLAYER AREA
         , div [ class "bj-sector player-sector" ]
             [ h3 [] [ text ("Spieler (Punkte: " ++ String.fromInt (bjCalculateScore model.bjPlayerHand) ++ ")") ]
-            , div [ class "bj-hand-display" ]
-                (List.map viewBjCard (List.reverse model.bjPlayerHand))
+            , div [ class "bj-hand-display" ] (List.map viewBjCard (List.reverse model.bjPlayerHand))
             ]
-
-        -- CONTROLS
         , div [ class "bj-controls" ]
-            (if model.bjState == BjPlayerTurn then
-                [ button [ class "btn action-btn bj-hit-btn", onClick BjHit ] [ text "Karte ziehen (Hit)" ]
-                , button [ class "btn action-btn bj-stand-btn", onClick BjStand ] [ text "Halten (Stand)" ]
-                ]
-
-             else
-                [ button [ class "btn action-btn bj-reset-btn", onClick BjRestart ] [ text "Neues Spiel (Einsatz: 20€)" ] ]
-            )
+            [ button [ class "btn bj-btn hit-btn", onClick BjHit, disabled (model.bjState /= BjPlayerTurn || List.isEmpty model.bjPlayerHand) ] [ text "Karte ziehen (Hit)" ]
+            , button [ class "btn bj-btn stand-btn", onClick BjStand, disabled (model.bjState /= BjPlayerTurn || List.isEmpty model.bjPlayerHand) ] [ text "Halten (Stand)" ]
+            , button [ class "btn action-btn bj-restart-btn", onClick BjRestart, disabled (model.bjState == BjPlayerTurn) ] [ text "Einsatz setzen (20€)" ]
+            ]
         ]
 
 
@@ -1483,7 +1655,7 @@ viewBjStatus : BjGameState -> String
 viewBjStatus state =
     case state of
         BjPlayerTurn ->
-            "Du bist am Zug. Ziehen oder Halten?"
+            "Du bist am Zug. Ziehst du noch eine Karte oder hältst du?"
 
         BjDealerTurn ->
             "Dealer zieht Karten..."
@@ -1507,50 +1679,217 @@ viewBjStatus state =
 viewBjCard : BjCard -> Html Msg
 viewBjCard card =
     let
-        sym =
+        ( sym, isRed ) =
             case card of
                 BjAce ->
-                    "🂡"
+                    ( "🂡", False )
 
                 BjTwo ->
-                    "🂢"
+                    ( "🂢", False )
 
                 BjThree ->
-                    "🂣"
+                    ( "🂣", False )
 
                 BjFour ->
-                    "🂤"
+                    ( "🂤", False )
 
                 BjFive ->
-                    "🂥"
+                    ( "🂥", False )
 
                 BjSix ->
-                    "🂦"
+                    ( "🂦", False )
 
                 BjSeven ->
-                    "🂧"
+                    ( "🂧", False )
 
                 BjEight ->
-                    "🂨"
+                    ( "🂨", False )
 
                 BjNine ->
-                    "🂩"
+                    ( "🂩", False )
 
                 BjTen ->
-                    "🂪"
+                    ( "🂪", False )
 
                 BjJack ->
-                    "🂫"
+                    ( "🂫", False )
 
                 BjQueen ->
-                    "🂭"
+                    ( "🂭", True )
 
+                -- Schickes rotes Herz-Symbol-Mapping im CSS simuliert
                 BjKing ->
-                    "🂮"
+                    ( "🂮", True )
     in
-    span [ class "bj-card-render" ] [ text sym ]
+    span [ classList [ ( "bj-card-render", True ), ( "bj-red", isRed ) ] ] [ text sym ]
+
+
+
+-- VIEW: GLÜCKSRAD (NEU MIT INTERAKTIVEM SVG)
+
+
+viewWheelOfFortune : Model -> Html Msg
+viewWheelOfFortune model =
+    let
+        statusText =
+            case model.wheelState of
+                WheelIdle ->
+                    "Drehe das Rad für 20 € und gewinne fette Preise!"
+
+                WheelSpinning ->
+                    "Das Rad rotiert wild... Wo bleibt es stehen?!"
+
+                WheelResult sector ->
+                    if sector.multiplier == 0.0 then
+                        "😢 Schade! Das war leider eine Niete."
+
+                    else
+                        "🎉 Glückwunsch! Multiplikator " ++ sector.label ++ " getroffen!"
+
+        isSpinning =
+            model.wheelState == WheelSpinning
+    in
+    div [ class "wheel-game-wrapper" ]
+        [ h2 [] [ text "🎡 Lucky SVG Wheel" ]
+        , div [ class "roulette-status" ] [ text statusText ]
+
+        -- DAS HOCHWERTIGE SVG GLÜCKSRAD
+        , div [ class "wheel-stage" ]
+            [ svg
+                [ viewBox "0 0 300 300"
+                , Svg.Attributes.width "320"
+                , Svg.Attributes.height "320"
+                ]
+                [ -- 1. Der rotierende Teil (g = Group-Element)
+                  g
+                    [ transform ("rotate(" ++ String.fromFloat model.wheelRotation ++ ", 150, 150)")
+                    , Svg.Attributes.style "transition: transform 3s cubic-bezier(0.1, 0.8, 0.2, 1);"
+                    ]
+                    (List.map renderWheelSector wheelSectors)
+
+                -- 2. Der statische Stopper/Pfeil oben (zeigt auf 270 Grad / Top Center)
+                , polygon [ Svg.Attributes.points "150,22 140,2 160,2", fill "#ffffff", stroke "#000000", strokeWidth "2" ] []
+                , circle [ cx "150", cy "150", r "12", fill "#ffffff", stroke "#333", strokeWidth "3" ] []
+                ]
+            ]
+        , button
+            [ class "btn action-btn wheel-spin-btn"
+            , onClick StartWheelSpin
+            , disabled (isSpinning || model.balance < 20)
+            ]
+            [ text
+                (if isSpinning then
+                    "Glücksrad dreht..."
+
+                 else
+                    "Für 20€ DREHEN!"
+                )
+            ]
+        ]
+
+
+
+-- Hilfsfunktion: Zeichnet genau ein Tortenstück (45 Grad) inklusive gedrehtem Text
+
+
+renderWheelSector : WheelSector -> Svg Msg
+renderWheelSector sector =
+    let
+        -- Jedes Feld hat eine Breite von 45 Grad
+        startAngle =
+            toFloat sector.id * 45.0
+
+        endAngle =
+            startAngle + 45.0
+
+        -- Umwandlung von Grad in Bogenmaß für SVG-Kreisberechnung
+        rad angle =
+            angle * pi / 180.0
+
+        -- Koordinaten für den äußeren Kreisbogen (Mittelpunkt 150,150, Radius 130)
+        rRadius =
+            130.0
+
+        x1 =
+            String.fromFloat (150.0 + rRadius * cos (rad startAngle))
+
+        y1 =
+            String.fromFloat (150.0 + rRadius * sin (rad startAngle))
+
+        x2 =
+            String.fromFloat (150.0 + rRadius * cos (rad endAngle))
+
+        y2 =
+            String.fromFloat (150.0 + rRadius * sin (rad endAngle))
+
+        -- SVG Path Befehl für ein Tortenstück (Move to 150 150, Line to X1 Y1, Arc to X2 Y2, Close)
+        pathData =
+            "M 150 150 L " ++ x1 ++ " " ++ y1 ++ " A 130 130 0 0 1 " ++ x2 ++ " " ++ y2 ++ " Z"
+
+        -- Textrotation genau in die Mitte des Tortenstücks platziert
+        textAngle =
+            startAngle + 22.5
+    in
+    g []
+        [ path [ d pathData, fill sector.color, stroke "#222222", strokeWidth "2" ] []
+        , text_
+            [ x "235"
+            , y "154"
+            , fill sector.textCol
+            , fontSize "9"
+            , textAnchor "end"
+            , transform ("rotate(" ++ String.fromFloat textAngle ++ ", 150, 150)")
+            , Svg.Attributes.style "font-weight: bold; font-family: sans-serif;"
+            ]
+            [ Svg.text sector.label ]
+        ]
+
+
+
+-- VIEW: STATIC PAGES
 
 
 viewStaticPage : String -> String -> Html Msg
 viewStaticPage titel beschreibung =
     div [ class "static-page" ] [ h2 [] [ text titel ], p [] [ text beschreibung ] ]
+
+
+
+-- VIEW: SHOP (LUCKY SHOP)
+
+
+viewShop : Model -> Html Msg
+viewShop model =
+    div [ class "shop-container" ]
+        [ h2 [ class "casino-title shop-main-title" ] [ text "Lucky Shop" ]
+        , p [ class "casino-subtitle" ] [ text "Erwerbe permanente Glücksbringer. Nur der höchste Effekt schützt dich aktiv!" ]
+        , div [ class "shop-grid" ]
+            (List.map (viewShopItem model) availableCharms)
+        ]
+
+
+viewShopItem : Model -> Charm -> Html Msg
+viewShopItem model charm =
+    let
+        isOwned =
+            List.member charm.id model.ownedCharmIds
+
+        canAfford =
+            model.balance >= charm.price
+
+        ( btnText, btnDisabled, btnClass ) =
+            if isOwned then
+                ( "Bereits im Besitz", True, "shop-btn owned" )
+
+            else if not canAfford then
+                ( "Zu wenig Geld (" ++ String.fromInt charm.price ++ "€)", True, "shop-btn locked" )
+
+            else
+                ( "Kaufen für " ++ String.fromInt charm.price ++ "€", False, "shop-btn" )
+    in
+    div [ class "shop-card" ]
+        [ div [ class "shop-card-icon" ] [ text charm.icon ]
+        , h3 [ class "shop-card-title" ] [ text charm.name ]
+        , p [ class "shop-card-desc" ] [ text ("Erhöht deine Gewinnchancen global auf ein " ++ String.fromFloat charm.multiplier ++ "-faches!") ]
+        , button [ class btnClass, onClick (BuyCharm charm), disabled btnDisabled ] [ text btnText ]
+        ]

@@ -11,6 +11,36 @@ import Svg exposing (Svg, circle, g, path, polygon, svg, text_)
 import Svg.Attributes exposing (cx, cy, d, fill, fontSize, r, stroke, strokeWidth, textAnchor, transform, viewBox, x, y)
 import Task
 import Time
+import Http
+import Json.Decode as Decode
+import Json.Encode as Encode
+
+-- GET / POST
+apiUrl : String
+apiUrl =
+    "http://127.0.0.1:3030/score/spieler1"
+
+
+
+-- 1. FUNKTION: Punkte abrufen (GET)
+getScore : (Result Http.Error Int -> msg) -> Cmd msg
+getScore toMsg =
+    Http.get
+        { url = apiUrl
+        , expect = Http.expectJson toMsg (Decode.field "score" Decode.int)
+        }
+
+
+
+-- 2. FUNKTION: Punkte setzen (POST)
+postScore : Int -> (Result Http.Error Int -> msg) -> Cmd msg
+postScore neuerScore toMsg =
+    Http.post
+        { url = apiUrl
+        , body = Http.jsonBody (Encode.object [ ( "score", Encode.int neuerScore ) ])
+        , expect = Http.expectJson toMsg (Decode.field "score" Decode.int)
+        }
+
 
 
 
@@ -312,7 +342,7 @@ init _ =
       -- Shop
       , ownedCharmIds = []
       }
-    , Cmd.none
+    , getScore GotInitialScore
     )
 
 
@@ -398,11 +428,30 @@ type Msg
     | RevealWheelResult WheelSector Float
       -- Shop Interaction
     | BuyCharm Charm
+      -- Server-Kommunikation
+    | GotInitialScore (Result Http.Error Int)
+    | ScorePosted (Result Http.Error Int)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotInitialScore result ->
+            case result of
+                Ok score ->
+                    ( { model | balance = score }, Cmd.none )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
+        ScorePosted result ->
+            case result of
+                Ok score ->
+                    ( { model | balance = score }, Cmd.none )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
         NavigateTo page ->
             let
                 baseModel =
@@ -506,7 +555,7 @@ update msg model =
                     else
                         model.balance - 10
             in
-            ( { model | coinGameState = Result resultData, balance = newBalance }, Cmd.none )
+            ( { model | coinGameState = Result resultData, balance = newBalance }, postScore newBalance ScorePosted )
 
         -- RUSSIAN ROULETTE
         SetupRussianRouletteBullet chamber ->
@@ -545,10 +594,16 @@ update msg model =
             if isDeadShot && finalDeathHit then
                 case model.rouletteTurn of
                     PlayerTurn ->
-                        ( { model | rouletteState = RouletteDead PlayerTurn, balance = model.balance - 1000 }, Cmd.none )
+                        let
+                            newBalance = model.balance - 1000
+                        in
+                        ( { model | rouletteState = RouletteDead PlayerTurn, balance = newBalance }, postScore newBalance ScorePosted )
 
                     DealerTurn ->
-                        ( { model | rouletteState = RouletteWon, balance = model.balance + 1000 }, Cmd.none )
+                        let
+                            newBalance = model.balance + 1000
+                        in
+                        ( { model | rouletteState = RouletteWon, balance = newBalance }, postScore newBalance ScorePosted )
 
             else if isDeadShot && not finalDeathHit && model.rouletteTurn == PlayerTurn then
                 ( { model | rouletteTurn = DealerTurn, rouletteRotation = 0, rouletteState = RouletteIdle, currentShot = model.currentShot + 1 }
@@ -652,7 +707,7 @@ update msg model =
                         _ ->
                             model.balance
             in
-            ( { model | rpsState = nextState, rpsDealerChoice = dChoice, rpsPlayerScore = newPScore, rpsDealerScore = newDScore, balance = newBalance }, Cmd.none )
+            ( { model | rpsState = nextState, rpsDealerChoice = dChoice, rpsPlayerScore = newPScore, rpsDealerScore = newDScore, balance = newBalance }, postScore newBalance ScorePosted )
 
         -- CARD MONTE
         StartMonteGame ->
@@ -700,7 +755,7 @@ update msg model =
                     else
                         model.balance - 20
             in
-            ( { model | monteState = MonteResult isCorrect, balance = newBalance }, Cmd.none )
+            ( { model | monteState = MonteResult isCorrect, balance = newBalance }, postScore newBalance ScorePosted )
 
         -- SLOT MACHINE
         StartSlotSpin ->
@@ -711,13 +766,16 @@ update msg model =
                 ( { model | slotMessage = "Nicht genug Geld! Geh zurück zum Dashboard." }, Cmd.none )
 
             else
+                let
+                    newBalance = model.balance - 10
+                in
                 ( { model
-                    | balance = model.balance - 10
+                    | balance = newBalance
                     , slotMessage = "Die Walzen laufen..."
                     , slotIsSpinning = True
                     , slotSpinTicks = 0
                   }
-                , Cmd.none
+                , postScore newBalance ScorePosted
                 )
 
         SlotTick _ ->
@@ -763,16 +821,18 @@ update msg model =
 
                         else
                             ( 0, "Leider verloren. Versuch es noch einmal!" )
+
+                    newBalance = model.balance + winAmount
                 in
                 ( { model
                     | slot1 = finalS1
                     , slot2 = finalS2
                     , slot3 = finalS3
-                    , balance = model.balance + winAmount
+                    , balance = newBalance
                     , slotMessage = msgText
                     , slotIsSpinning = False
                   }
-                , Cmd.none
+                , postScore newBalance ScorePosted
                 )
 
         -- BLACKJACK INTERACTION
@@ -838,8 +898,14 @@ update msg model =
                 ( { model | currentPage = Dashboard }, Cmd.none )
 
             else
-                ( { model | bjPlayerHand = [], bjDealerHand = [], bjState = BjPlayerTurn, balance = model.balance - 20 }
-                , Random.generate BjInitialDraw (Random.pair bjCardGenerator bjCardGenerator)
+                let
+                    newBalance = model.balance - 20
+                in
+                ( { model | bjPlayerHand = [], bjDealerHand = [], bjState = BjPlayerTurn, balance = newBalance }
+                , Cmd.batch
+                    [ Random.generate BjInitialDraw (Random.pair bjCardGenerator bjCardGenerator)
+                    , postScore newBalance ScorePosted
+                    ]
                 )
 
         -- GLÜCKSRAD LOGIK (NEU)
@@ -849,40 +915,29 @@ update msg model =
 
             else if model.balance < 20 then
                 ( model, Cmd.none )
-                -- Verhindert Drehen ohne Geld
 
             else
-                -- 20€ sofort abziehen vor dem Drehen!
+                let
+                    newBalance = model.balance - 20
+                in
                 ( { model
-                    | balance = model.balance - 20
+                    | balance = newBalance
                     , wheelState = WheelSpinning
                   }
-                , Random.generate CalculateWheelResult (Random.int 0 7)
+                , postScore newBalance ScorePosted
                 )
 
         CalculateWheelResult targetSectorId ->
             let
-                -- Finde das ausgewählte Segment aus der Definitionsliste
                 selectedSector =
                     wheelSectors
                         |> List.filter (\s -> s.id == targetSectorId)
                         |> List.head
                         |> Maybe.withDefault { id = 1, label = "NIETE", multiplier = 0.0, color = "#d9534f", textCol = "#fff" }
 
-                -- Ein Segment ist genau 45° breit (360° / 8)
                 sectorAngle = 45.0
-                
-                -- Der Stopper befindet sich oben bei 270°.
-                -- Da SVG-Kreise bei 3 Uhr (0°) starten und im Uhrzeigersinn laufen,
-                -- müssen wir berechnen, wie weit das Zielfeld gedreht werden muss, damit es oben landet.
-                -- Formel für exakte visuelle Synchronität mit dem oberen Pfeil:
                 targetAngle = 270.0 - (toFloat targetSectorId * sectorAngle) - (sectorAngle / 2.0)
-                
-                -- Wir addieren einen massiven Basisschwung (6 volle Umdrehungen = 2160°),
-                -- damit sich das Rad immer rasant und kräftig dreht.
                 baseSpin = 2160.0
-                
-                -- Der neue Gesamtwinkel berechnet sich aus dem aktuellen Stand + Schwung + Zielversatz
                 finalRotation = model.wheelRotation + baseSpin + (targetAngle - (model.wheelRotation - (toFloat (Basics.floor model.wheelRotation // 360) * 360.0)))
             in
             ( { model | wheelRotation = finalRotation }
@@ -891,7 +946,6 @@ update msg model =
 
         RevealWheelResult sector finalAngle ->
             let
-                -- Eventuelle Shop-Multiplikatoren einrechnen (falls erwünscht, sonst rein Basiswert)
                 charmMult =
                     getActiveMultiplier model
 
@@ -904,11 +958,9 @@ update msg model =
             ( { model
                 | wheelState = WheelResult sector
                 , balance = newBalance
-
-                -- Modulo 360 halten, damit nachfolgende Spins weich laufen
                 , wheelRotation = finalAngle
               }
-            , Cmd.none
+            , postScore newBalance ScorePosted
             )
 
         -- SHOP KAUFLOGIK
@@ -921,11 +973,14 @@ update msg model =
                     model.balance >= charm.price
             in
             if canAfford && not alreadyOwned then
+                let
+                    newBalance = model.balance - charm.price
+                in
                 ( { model
-                    | balance = model.balance - charm.price
+                    | balance = newBalance
                     , ownedCharmIds = charm.id :: model.ownedCharmIds
                   }
-                , Cmd.none
+                , postScore newBalance ScorePosted
                 )
 
             else
@@ -972,8 +1027,10 @@ updateDealer model =
 
                     _ ->
                         0
+
+            newBalance = model.balance + payout
         in
-        ( { model | bjState = finalState, balance = model.balance + payout }, Cmd.none )
+        ( { model | bjState = finalState, balance = newBalance }, postScore newBalance ScorePosted )
 
 
 randomSide : Random.Generator Side
@@ -1795,18 +1852,15 @@ viewWheelOfFortune model =
 renderWheelSector : WheelSector -> Svg Msg
 renderWheelSector sector =
     let
-        -- Jedes Feld hat eine Breite von 45 Grad
         startAngle =
             toFloat sector.id * 45.0
 
         endAngle =
             startAngle + 45.0
 
-        -- Umwandlung von Grad in Bogenmaß für SVG-Kreisberechnung
         rad angle =
             angle * pi / 180.0
 
-        -- Koordinaten für den äußeren Kreisbogen (Mittelpunkt 150,150, Radius 130)
         rRadius =
             130.0
 
@@ -1822,11 +1876,9 @@ renderWheelSector sector =
         y2 =
             String.fromFloat (150.0 + rRadius * sin (rad endAngle))
 
-        -- SVG Path Befehl für ein Tortenstück (Move to 150 150, Line to X1 Y1, Arc to X2 Y2, Close)
         pathData =
             "M 150 150 L " ++ x1 ++ " " ++ y1 ++ " A 130 130 0 0 1 " ++ x2 ++ " " ++ y2 ++ " Z"
 
-        -- Textrotation genau in die Mitte des Tortenstücks platziert
         textAngle =
             startAngle + 22.5
     in

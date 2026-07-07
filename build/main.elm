@@ -924,7 +924,7 @@ update msg model =
                     | balance = newBalance
                     , wheelState = WheelSpinning
                   }
-                , postScore newBalance ScorePosted
+                , Random.generate CalculateWheelResult (Random.int 0 7)
                 )
 
         CalculateWheelResult targetSectorId ->

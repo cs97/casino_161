@@ -6584,6 +6584,9 @@ var $author$project$Main$Blackjack = {$: 'Blackjack'};
 var $author$project$Main$CalculateCoinFlipResult = function (a) {
 	return {$: 'CalculateCoinFlipResult', a: a};
 };
+var $author$project$Main$CalculateWheelResult = function (a) {
+	return {$: 'CalculateWheelResult', a: a};
+};
 var $author$project$Main$CardMonte = {$: 'CardMonte'};
 var $author$project$Main$DealerTurn = {$: 'DealerTurn'};
 var $author$project$Main$GenerateDealerChoice = function (a) {
@@ -7799,7 +7802,10 @@ var $author$project$Main$update = F2(
 							_Utils_update(
 								model,
 								{balance: newBalance, wheelState: $author$project$Main$WheelSpinning}),
-							A2($author$project$Main$postScore, newBalance, $author$project$Main$ScorePosted));
+							A2(
+								$elm$random$Random$generate,
+								$author$project$Main$CalculateWheelResult,
+								A2($elm$random$Random$int, 0, 7)));
 					}
 				}
 			case 'CalculateWheelResult':

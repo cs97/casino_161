@@ -1,0 +1,145 @@
+-- Shop.elm
+module Shop exposing (Model, Msg, init, update, view, subscriptions, getActiveMultiplier, getActiveCharmName, getActiveCharmIcon, availableCharms)
+
+import Html exposing (Html, button, div, h2, h3, p, text)
+import Html.Attributes exposing (class, classList, disabled)
+import Html.Events exposing (onClick)
+import Types exposing (Charm)
+import Time
+
+-- MODEL
+
+type alias Model =
+    { ownedIds : List Int
+    }
+
+init : ( Model, Cmd Msg )
+init =
+    ( { ownedIds = [] }
+    , Cmd.none
+    )
+
+-- HELPER FUNCTIONS
+
+availableCharms : List Charm
+availableCharms =
+    [ { id = 1, name = "Kleeblatt", multiplier = 1.1, price = 300, icon = "🍀" }
+    , { id = 2, name = "Hufeisen", multiplier = 1.3, price = 800, icon = "🐴" }
+    , { id = 3, name = "Glückspilz", multiplier = 1.5, price = 1200, icon = "🍄" }
+    , { id = 4, name = "Marienkäfer", multiplier = 1.8, price = 2000, icon = "🐞" }
+    , { id = 5, name = "Hasenpfote", multiplier = 2.0, price = 2500, icon = "🐾" }
+    ]
+
+getActiveMultiplier : Model -> Float
+getActiveMultiplier model =
+    availableCharms
+        |> List.filter (\charm -> List.member charm.id model.ownedIds)
+        |> List.map .multiplier
+        |> List.maximum
+        |> Maybe.withDefault 1.0
+
+getActiveCharmName : Model -> String
+getActiveCharmName model =
+    availableCharms
+        |> List.filter (\charm -> List.member charm.id model.ownedIds)
+        |> List.sortBy .multiplier
+        |> List.reverse
+        |> List.head
+        |> Maybe.map .name
+        |> Maybe.withDefault "Keiner"
+
+getActiveCharmIcon : Model -> String
+getActiveCharmIcon model =
+    availableCharms
+        |> List.filter (\charm -> List.member charm.id model.ownedIds)
+        |> List.sortBy .multiplier
+        |> List.reverse
+        |> List.head
+        |> Maybe.map .icon
+        |> Maybe.withDefault "🎲"
+
+isCharmOwned : Model -> Int -> Bool
+isCharmOwned model charmId =
+    List.member charmId model.ownedIds
+
+-- UPDATE
+
+type Msg
+    = BuyCharm Charm
+    | NoOp
+
+update : Msg -> Model -> ( Model, Cmd Msg, Int )
+update msg model =
+    case msg of
+        BuyCharm charm ->
+            let
+                alreadyOwned =
+                    isCharmOwned model charm.id
+
+                -- Balance wird vom Main-Modul verwaltet
+                -- Hier geben wir nur den Preis zurück, den Main abziehen soll
+                price =
+                    if alreadyOwned then
+                        0
+                    else
+                        -charm.price
+
+                newOwnedIds =
+                    if alreadyOwned then
+                        model.ownedIds
+                    else
+                        charm.id :: model.ownedIds
+            in
+            ( { model | ownedIds = newOwnedIds }
+            , Cmd.none
+            , price
+            )
+
+        NoOp ->
+            ( model, Cmd.none, 0 )
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+-- VIEW
+
+view : Model -> Html Msg
+view model =
+    div [ class "shop-container" ]
+        [ h2 [ class "casino-title shop-main-title" ] [ text "Lucky Shop" ]
+        , p [ class "casino-subtitle" ] 
+            [ text "Erwerbe permanente Glücksbringer. Nur der höchste Effekt schützt dich aktiv!" ]
+        , div [ class "shop-grid" ]
+            (List.map (viewShopItem model) availableCharms)
+        ]
+
+viewShopItem : Model -> Charm -> Html Msg
+viewShopItem model charm =
+    let
+        isOwned =
+            isCharmOwned model charm.id
+
+        ( btnText, btnDisabled, btnClass ) =
+            if isOwned then
+                ( "✅ Bereits im Besitz", True, "shop-btn owned" )
+            else
+                ( "🛒 Kaufen für " ++ String.fromInt charm.price ++ "€", False, "shop-btn" )
+    in
+    div 
+        [ class "shop-card"
+        , classList [ ( "shop-card-owned", isOwned ) ]
+        ]
+        [ div [ class "shop-card-icon" ] [ text charm.icon ]
+        , h3 [ class "shop-card-title" ] [ text charm.name ]
+        , p [ class "shop-card-desc" ] 
+            [ text ("Erhöht deine Gewinnchancen global auf ein " ++ String.fromFloat charm.multiplier ++ "-faches!") ]
+        , p [ class "shop-card-effect" ]
+            [ text ("🎯 Multiplikator: " ++ String.fromFloat charm.multiplier ++ "x") ]
+        , button 
+            [ class btnClass
+            , onClick (BuyCharm charm)
+            , disabled btnDisabled
+            ]
+            [ text btnText ]
+        ]

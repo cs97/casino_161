@@ -7,7 +7,8 @@ import Json.Encode as Encode
 
 apiUrl : String
 apiUrl =
-    "http://127.0.0.1:3030/score/spieler1"
+    --"http://chrswr.de:3030/score/spieler1"
+    "/score/spieler1"
 
 getScore : (Result Http.Error Int -> msg) -> Cmd msg
 getScore toMsg =

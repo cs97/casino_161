@@ -26,7 +26,8 @@ init =
       , bulletChamber = 3
       , currentShot = 1
       }
-    , Random.generate SetupBullet (Random.int 1 6)
+    -- , Random.generate SetupBullet (Random.int 1 6)
+    , Cmd.none
     )
 
 type Msg

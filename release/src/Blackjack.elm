@@ -21,7 +21,8 @@ init =
       , dealerHand = []
       , state = BjPlayerTurn
       }
-    , Random.generate InitialDraw (Random.pair bjCardGenerator bjCardGenerator)
+    --, Random.generate InitialDraw (Random.pair bjCardGenerator bjCardGenerator)
+    , Cmd.none
     )
 
 type Msg

@@ -353,7 +353,7 @@ update msg model =
                     ( { model | balance = score }, Cmd.none )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( { model | balance = 100 }, Cmd.none )
 
         ScorePosted result ->
             case result of

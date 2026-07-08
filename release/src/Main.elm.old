@@ -4,7 +4,6 @@ module Main exposing (main)
 import Api exposing (apiUrl, getScore, postScore)
 import Blackjack as Bj
 import Browser
-import Browser.Navigation as Nav
 import CardMonte as Monte
 import CoinFlip as Coin
 import Html exposing (Html, button, div, h1, h2, option, p, select, text)
@@ -22,8 +21,6 @@ import Svg.Attributes exposing (cx, cy, d, fill, fontSize, r, stroke, strokeWidt
 import Task
 import Time
 import Types exposing (..)
-import Url exposing (Url)
-import Url.Parser as Parser exposing ((</>), Parser, int, map, oneOf, parse, s, string, top)
 import Utils exposing (..)
 import WheelOfFortune as Wheel
 
@@ -31,127 +28,17 @@ import WheelOfFortune as Wheel
 
 main : Program () Model Msg
 main =
-    Browser.application
+    Browser.element
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
-        , onUrlRequest = LinkClicked
-        , onUrlChange = UrlChanged
         }
-
--- ROUTING
-
-type Route
-    = RouteDashboard
-    | RouteCoinFlip
-    | RouteRussianRoulette
-    | RouteRockPaperScissors
-    | RouteCardMonte
-    | RouteSlotMachine
-    | RouteBlackjack
-    | RouteWheelOfFortune
-    | RouteLeaderboard
-    | RouteShop
-    | RouteGamePlaceholder Int
-    | RouteNotFound
-
-routeParser : Parser (Route -> a) a
-routeParser =
-    oneOf
-        [ map RouteDashboard top
-        , map RouteCoinFlip (s "coinflip")
-        , map RouteRussianRoulette (s "roulette")
-        , map RouteRockPaperScissors (s "rps")
-        , map RouteCardMonte (s "monte")
-        , map RouteSlotMachine (s "slot")
-        , map RouteBlackjack (s "blackjack")
-        , map RouteWheelOfFortune (s "wheel")
-        , map RouteLeaderboard (s "leaderboard")
-        , map RouteShop (s "shop")
-        , map RouteGamePlaceholder (s "game" </> int)
-        ]
-
-routeToPage : Route -> Page
-routeToPage route =
-    case route of
-        RouteDashboard ->
-            Dashboard
-
-        RouteCoinFlip ->
-            CoinFlip
-
-        RouteRussianRoulette ->
-            RussianRoulette
-
-        RouteRockPaperScissors ->
-            RockPaperScissors
-
-        RouteCardMonte ->
-            CardMonte
-
-        RouteSlotMachine ->
-            SlotMachine
-
-        RouteBlackjack ->
-            Blackjack
-
-        RouteWheelOfFortune ->
-            WheelOfFortune
-
-        RouteLeaderboard ->
-            Leaderboard
-
-        RouteShop ->
-            ShopPage
-
-        RouteGamePlaceholder id ->
-            GamePlaceholder id
-
-        RouteNotFound ->
-            Dashboard
-
-pageToRoute : Page -> String
-pageToRoute page =
-    case page of
-        Dashboard ->
-            "/"
-
-        CoinFlip ->
-            "/coinflip"
-
-        RussianRoulette ->
-            "/roulette"
-
-        RockPaperScissors ->
-            "/rps"
-
-        CardMonte ->
-            "/monte"
-
-        SlotMachine ->
-            "/slot"
-
-        Blackjack ->
-            "/blackjack"
-
-        WheelOfFortune ->
-            "/wheel"
-
-        Leaderboard ->
-            "/leaderboard"
-
-        ShopPage ->
-            "/shop"
-
-        GamePlaceholder id ->
-            "/game/" ++ String.fromInt id
 
 -- MODEL
 
 type alias Model =
-    { key : Nav.Key
-    , currentPage : Page
+    { currentPage : Page
     , balance : Int
     , dropdownValue : String
     , coin : Coin.Model
@@ -164,16 +51,9 @@ type alias Model =
     , shop : Shop.Model
     }
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
+init : () -> ( Model, Cmd Msg )
+init _ =
     let
-        route =
-            parse routeParser url
-                |> Maybe.withDefault RouteNotFound
-
-        page =
-            routeToPage route
-
         ( coin, coinCmd ) =
             Coin.init
 
@@ -198,8 +78,7 @@ init _ url key =
         ( shop, shopCmd ) =
             Shop.init
     in
-    ( { key = key
-      , currentPage = page
+    ( { currentPage = Dashboard
       , balance = 100
       , dropdownValue = ""
       , coin = coin
@@ -227,9 +106,7 @@ init _ url key =
 -- UPDATE
 
 type Msg
-    = LinkClicked Browser.UrlRequest
-    | UrlChanged Url
-    | NavigateTo Page
+    = NavigateTo Page
     | SelectDropdown String
     | GotInitialScore (Result Http.Error Int)
     | ScorePosted (Result Http.Error Int)
@@ -245,108 +122,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        LinkClicked urlRequest ->
-            case urlRequest of
-                Browser.Internal url ->
-                    ( model, Nav.pushUrl model.key (Url.toString url) )
-
-                Browser.External href ->
-                    ( model, Nav.load href )
-
-        UrlChanged url ->
-            let
-                route =
-                    parse routeParser url
-                        |> Maybe.withDefault RouteNotFound
-
-                page =
-                    routeToPage route
-
-                newModel =
-                    { model | currentPage = page, dropdownValue = "" }
-            in
-            case page of
-                RussianRoulette ->
-                    let
-                        ( newRoulette, rouletteCmd ) =
-                            Roulette.init
-                    in
-                    ( { newModel | roulette = newRoulette }
-                    , Cmd.map RouletteMsg rouletteCmd
-                    )
-
-                RockPaperScissors ->
-                    let
-                        ( newRps, rpsCmd ) =
-                            Rps.init
-                    in
-                    ( { newModel | rps = newRps }
-                    , Cmd.map RpsMsg rpsCmd
-                    )
-
-                CardMonte ->
-                    let
-                        ( newMonte, monteCmd ) =
-                            Monte.init
-                    in
-                    ( { newModel | monte = newMonte }
-                    , Cmd.map MonteMsg monteCmd
-                    )
-
-                SlotMachine ->
-                    let
-                        ( newSlot, slotCmd ) =
-                            Slot.init
-                    in
-                    ( { newModel | slot = newSlot }
-                    , Cmd.map SlotMsg slotCmd
-                    )
-
-                Blackjack ->
-                    let
-                        ( newBlackjack, bjCmd ) =
-                            Bj.init
-                    in
-                    ( { newModel | blackjack = newBlackjack }
-                    , Cmd.map BjMsg bjCmd
-                    )
-
-                WheelOfFortune ->
-                    let
-                        ( newWheel, wheelCmd ) =
-                            Wheel.init
-                    in
-                    ( { newModel | wheel = newWheel }
-                    , Cmd.map WheelMsg wheelCmd
-                    )
-
-                _ ->
-                    ( newModel, Cmd.none )
-
-        NavigateTo page ->
-            let
-                path =
-                    pageToRoute page
-            in
-            ( { model | currentPage = page, dropdownValue = "" }
-            , Nav.pushUrl model.key path
-            )
-
-        SelectDropdown val ->
-            case val of
-                "leaderboard" ->
-                    ( { model | currentPage = Leaderboard, dropdownValue = "" }
-                    , Nav.pushUrl model.key "/leaderboard"
-                    )
-
-                "shop" ->
-                    ( { model | currentPage = ShopPage, dropdownValue = "" }
-                    , Nav.pushUrl model.key "/shop"
-                    )
-
-                _ ->
-                    ( { model | dropdownValue = "" }, Cmd.none )
-
         GotInitialScore result ->
             case result of
                 Ok score ->
@@ -362,6 +137,20 @@ update msg model =
 
                 Err _ ->
                     ( model, Cmd.none )
+
+        NavigateTo page ->
+            ( { model | currentPage = page, dropdownValue = "" }, Cmd.none )
+
+        SelectDropdown val ->
+            case val of
+                "leaderboard" ->
+                    ( { model | currentPage = Leaderboard, dropdownValue = "" }, Cmd.none )
+
+                "shop" ->
+                    ( { model | currentPage = ShopPage, dropdownValue = "" }, Cmd.none )
+
+                _ ->
+                    ( { model | dropdownValue = "" }, Cmd.none )
 
         -- COIN FLIP
         CoinMsg subMsg ->
@@ -503,66 +292,26 @@ subscriptions model =
 
 -- VIEW
 
-view : Model -> Browser.Document Msg
+view : Model -> Html Msg
 view model =
-    { title = "Casino 161 - " ++ pageTitle model.currentPage
-    , body =
-        [ div
-            [ style "width" "100vw"
-            , style "height" "100vh"
-            , style "display" "flex"
-            , style "justify-content" "center"
-            , style "align-items" "center"
-            , style "position" "relative"
+    div
+        [ style "width" "100vw"
+        , style "height" "100vh"
+        , style "display" "flex"
+        , style "justify-content" "center"
+        , style "align-items" "center"
+        , style "position" "relative"
+        ]
+        [ viewTopBar model
+        , div
+            [ classList
+                [ ( "game-container", True )
+                , ( "dashboard-active", model.currentPage == Dashboard )
+                ]
             ]
-            [ viewTopBar model
-            , div
-                [ classList
-                    [ ( "game-container", True )
-                    , ( "dashboard-active", model.currentPage == Dashboard )
-                    ]
-                ]
-                [ viewPage model
-                ]
+            [ viewPage model
             ]
         ]
-    }
-
-pageTitle : Page -> String
-pageTitle page =
-    case page of
-        Dashboard ->
-            "Startseite"
-
-        CoinFlip ->
-            "Drehmünze"
-
-        RussianRoulette ->
-            "Russisch Roulette"
-
-        RockPaperScissors ->
-            "Schere Stein Papier"
-
-        CardMonte ->
-            "Find the Lady"
-
-        SlotMachine ->
-            "Einarmiger Bandit"
-
-        Blackjack ->
-            "Blackjack"
-
-        WheelOfFortune ->
-            "Glücksrad"
-
-        Leaderboard ->
-            "Bestenliste"
-
-        ShopPage ->
-            "Shop"
-
-        GamePlaceholder id ->
-            "Spiel " ++ String.fromInt id
 
 viewTopBar : Model -> Html Msg
 viewTopBar model =

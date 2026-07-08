@@ -4636,6 +4636,29 @@ function _Time_getZoneName()
 		callback(_Scheduler_succeed(name));
 	});
 }
+
+
+function _Url_percentEncode(string)
+{
+	return encodeURIComponent(string);
+}
+
+function _Url_percentDecode(string)
+{
+	try
+	{
+		return $elm$core$Maybe$Just(decodeURIComponent(string));
+	}
+	catch (e)
+	{
+		return $elm$core$Maybe$Nothing;
+	}
+}var $author$project$Main$LinkClicked = function (a) {
+	return {$: 'LinkClicked', a: a};
+};
+var $author$project$Main$UrlChanged = function (a) {
+	return {$: 'UrlChanged', a: a};
+};
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
@@ -5424,14 +5447,13 @@ var $elm$core$Task$perform = F2(
 			$elm$core$Task$Perform(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
-var $elm$browser$Browser$element = _Browser_element;
+var $elm$browser$Browser$application = _Browser_application;
 var $author$project$Main$BjMsg = function (a) {
 	return {$: 'BjMsg', a: a};
 };
 var $author$project$Main$CoinMsg = function (a) {
 	return {$: 'CoinMsg', a: a};
 };
-var $author$project$Types$Dashboard = {$: 'Dashboard'};
 var $author$project$Main$GotInitialScore = function (a) {
 	return {$: 'GotInitialScore', a: a};
 };
@@ -5441,6 +5463,7 @@ var $author$project$Main$MonteMsg = function (a) {
 var $author$project$Main$RouletteMsg = function (a) {
 	return {$: 'RouletteMsg', a: a};
 };
+var $author$project$Main$RouteNotFound = {$: 'RouteNotFound'};
 var $author$project$Main$RpsMsg = function (a) {
 	return {$: 'RpsMsg', a: a};
 };
@@ -6584,47 +6607,424 @@ var $author$project$WheelOfFortune$init = _Utils_Tuple2(
 	{rotation: 0.0, sectorCount: 8, state: $author$project$Types$WheelIdle},
 	$elm$core$Platform$Cmd$none);
 var $elm$core$Platform$Cmd$map = _Platform_map;
-var $author$project$Main$init = function (_v0) {
-	var _v1 = $author$project$WheelOfFortune$init;
-	var wheel = _v1.a;
-	var wheelCmd = _v1.b;
-	var _v2 = $author$project$SlotMachine$init;
-	var slot = _v2.a;
-	var slotCmd = _v2.b;
-	var _v3 = $author$project$Shop$init;
-	var shop = _v3.a;
-	var shopCmd = _v3.b;
-	var _v4 = $author$project$RockPaperScissors$init;
-	var rps = _v4.a;
-	var rpsCmd = _v4.b;
-	var _v5 = $author$project$RussianRoulette$init;
-	var roulette = _v5.a;
-	var rouletteCmd = _v5.b;
-	var _v6 = $author$project$CardMonte$init;
-	var monte = _v6.a;
-	var monteCmd = _v6.b;
-	var _v7 = $author$project$CoinFlip$init;
-	var coin = _v7.a;
-	var coinCmd = _v7.b;
-	var _v8 = $author$project$Blackjack$init;
-	var blackjack = _v8.a;
-	var bjCmd = _v8.b;
-	return _Utils_Tuple2(
-		{balance: 100, blackjack: blackjack, coin: coin, currentPage: $author$project$Types$Dashboard, dropdownValue: '', monte: monte, roulette: roulette, rps: rps, shop: shop, slot: slot, wheel: wheel},
-		$elm$core$Platform$Cmd$batch(
-			_List_fromArray(
-				[
-					$author$project$Api$getScore($author$project$Main$GotInitialScore),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$CoinMsg, coinCmd),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$RouletteMsg, rouletteCmd),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$RpsMsg, rpsCmd),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$MonteMsg, monteCmd),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$SlotMsg, slotCmd),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$BjMsg, bjCmd),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$WheelMsg, wheelCmd),
-					A2($elm$core$Platform$Cmd$map, $author$project$Main$ShopMsg, shopCmd)
-				])));
+var $elm$url$Url$Parser$State = F5(
+	function (visited, unvisited, params, frag, value) {
+		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
+	});
+var $elm$url$Url$Parser$getFirstMatch = function (states) {
+	getFirstMatch:
+	while (true) {
+		if (!states.b) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var state = states.a;
+			var rest = states.b;
+			var _v1 = state.unvisited;
+			if (!_v1.b) {
+				return $elm$core$Maybe$Just(state.value);
+			} else {
+				if ((_v1.a === '') && (!_v1.b.b)) {
+					return $elm$core$Maybe$Just(state.value);
+				} else {
+					var $temp$states = rest;
+					states = $temp$states;
+					continue getFirstMatch;
+				}
+			}
+		}
+	}
 };
+var $elm$url$Url$Parser$removeFinalEmpty = function (segments) {
+	if (!segments.b) {
+		return _List_Nil;
+	} else {
+		if ((segments.a === '') && (!segments.b.b)) {
+			return _List_Nil;
+		} else {
+			var segment = segments.a;
+			var rest = segments.b;
+			return A2(
+				$elm$core$List$cons,
+				segment,
+				$elm$url$Url$Parser$removeFinalEmpty(rest));
+		}
+	}
+};
+var $elm$url$Url$Parser$preparePath = function (path) {
+	var _v0 = A2($elm$core$String$split, '/', path);
+	if (_v0.b && (_v0.a === '')) {
+		var segments = _v0.b;
+		return $elm$url$Url$Parser$removeFinalEmpty(segments);
+	} else {
+		var segments = _v0;
+		return $elm$url$Url$Parser$removeFinalEmpty(segments);
+	}
+};
+var $elm$url$Url$Parser$addToParametersHelp = F2(
+	function (value, maybeList) {
+		if (maybeList.$ === 'Nothing') {
+			return $elm$core$Maybe$Just(
+				_List_fromArray(
+					[value]));
+		} else {
+			var list = maybeList.a;
+			return $elm$core$Maybe$Just(
+				A2($elm$core$List$cons, value, list));
+		}
+	});
+var $elm$url$Url$percentDecode = _Url_percentDecode;
+var $elm$url$Url$Parser$addParam = F2(
+	function (segment, dict) {
+		var _v0 = A2($elm$core$String$split, '=', segment);
+		if ((_v0.b && _v0.b.b) && (!_v0.b.b.b)) {
+			var rawKey = _v0.a;
+			var _v1 = _v0.b;
+			var rawValue = _v1.a;
+			var _v2 = $elm$url$Url$percentDecode(rawKey);
+			if (_v2.$ === 'Nothing') {
+				return dict;
+			} else {
+				var key = _v2.a;
+				var _v3 = $elm$url$Url$percentDecode(rawValue);
+				if (_v3.$ === 'Nothing') {
+					return dict;
+				} else {
+					var value = _v3.a;
+					return A3(
+						$elm$core$Dict$update,
+						key,
+						$elm$url$Url$Parser$addToParametersHelp(value),
+						dict);
+				}
+			}
+		} else {
+			return dict;
+		}
+	});
+var $elm$url$Url$Parser$prepareQuery = function (maybeQuery) {
+	if (maybeQuery.$ === 'Nothing') {
+		return $elm$core$Dict$empty;
+	} else {
+		var qry = maybeQuery.a;
+		return A3(
+			$elm$core$List$foldr,
+			$elm$url$Url$Parser$addParam,
+			$elm$core$Dict$empty,
+			A2($elm$core$String$split, '&', qry));
+	}
+};
+var $elm$url$Url$Parser$parse = F2(
+	function (_v0, url) {
+		var parser = _v0.a;
+		return $elm$url$Url$Parser$getFirstMatch(
+			parser(
+				A5(
+					$elm$url$Url$Parser$State,
+					_List_Nil,
+					$elm$url$Url$Parser$preparePath(url.path),
+					$elm$url$Url$Parser$prepareQuery(url.query),
+					url.fragment,
+					$elm$core$Basics$identity)));
+	});
+var $author$project$Main$RouteBlackjack = {$: 'RouteBlackjack'};
+var $author$project$Main$RouteCardMonte = {$: 'RouteCardMonte'};
+var $author$project$Main$RouteCoinFlip = {$: 'RouteCoinFlip'};
+var $author$project$Main$RouteDashboard = {$: 'RouteDashboard'};
+var $author$project$Main$RouteGamePlaceholder = function (a) {
+	return {$: 'RouteGamePlaceholder', a: a};
+};
+var $author$project$Main$RouteLeaderboard = {$: 'RouteLeaderboard'};
+var $author$project$Main$RouteRockPaperScissors = {$: 'RouteRockPaperScissors'};
+var $author$project$Main$RouteRussianRoulette = {$: 'RouteRussianRoulette'};
+var $author$project$Main$RouteShop = {$: 'RouteShop'};
+var $author$project$Main$RouteSlotMachine = {$: 'RouteSlotMachine'};
+var $author$project$Main$RouteWheelOfFortune = {$: 'RouteWheelOfFortune'};
+var $elm$url$Url$Parser$Parser = function (a) {
+	return {$: 'Parser', a: a};
+};
+var $elm$url$Url$Parser$custom = F2(
+	function (tipe, stringToSomething) {
+		return $elm$url$Url$Parser$Parser(
+			function (_v0) {
+				var visited = _v0.visited;
+				var unvisited = _v0.unvisited;
+				var params = _v0.params;
+				var frag = _v0.frag;
+				var value = _v0.value;
+				if (!unvisited.b) {
+					return _List_Nil;
+				} else {
+					var next = unvisited.a;
+					var rest = unvisited.b;
+					var _v2 = stringToSomething(next);
+					if (_v2.$ === 'Just') {
+						var nextValue = _v2.a;
+						return _List_fromArray(
+							[
+								A5(
+								$elm$url$Url$Parser$State,
+								A2($elm$core$List$cons, next, visited),
+								rest,
+								params,
+								frag,
+								value(nextValue))
+							]);
+					} else {
+						return _List_Nil;
+					}
+				}
+			});
+	});
+var $elm$url$Url$Parser$int = A2($elm$url$Url$Parser$custom, 'NUMBER', $elm$core$String$toInt);
+var $elm$url$Url$Parser$mapState = F2(
+	function (func, _v0) {
+		var visited = _v0.visited;
+		var unvisited = _v0.unvisited;
+		var params = _v0.params;
+		var frag = _v0.frag;
+		var value = _v0.value;
+		return A5(
+			$elm$url$Url$Parser$State,
+			visited,
+			unvisited,
+			params,
+			frag,
+			func(value));
+	});
+var $elm$url$Url$Parser$map = F2(
+	function (subValue, _v0) {
+		var parseArg = _v0.a;
+		return $elm$url$Url$Parser$Parser(
+			function (_v1) {
+				var visited = _v1.visited;
+				var unvisited = _v1.unvisited;
+				var params = _v1.params;
+				var frag = _v1.frag;
+				var value = _v1.value;
+				return A2(
+					$elm$core$List$map,
+					$elm$url$Url$Parser$mapState(value),
+					parseArg(
+						A5($elm$url$Url$Parser$State, visited, unvisited, params, frag, subValue)));
+			});
+	});
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
+	});
+var $elm$core$List$concat = function (lists) {
+	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+};
+var $elm$core$List$concatMap = F2(
+	function (f, list) {
+		return $elm$core$List$concat(
+			A2($elm$core$List$map, f, list));
+	});
+var $elm$url$Url$Parser$oneOf = function (parsers) {
+	return $elm$url$Url$Parser$Parser(
+		function (state) {
+			return A2(
+				$elm$core$List$concatMap,
+				function (_v0) {
+					var parser = _v0.a;
+					return parser(state);
+				},
+				parsers);
+		});
+};
+var $elm$url$Url$Parser$s = function (str) {
+	return $elm$url$Url$Parser$Parser(
+		function (_v0) {
+			var visited = _v0.visited;
+			var unvisited = _v0.unvisited;
+			var params = _v0.params;
+			var frag = _v0.frag;
+			var value = _v0.value;
+			if (!unvisited.b) {
+				return _List_Nil;
+			} else {
+				var next = unvisited.a;
+				var rest = unvisited.b;
+				return _Utils_eq(next, str) ? _List_fromArray(
+					[
+						A5(
+						$elm$url$Url$Parser$State,
+						A2($elm$core$List$cons, next, visited),
+						rest,
+						params,
+						frag,
+						value)
+					]) : _List_Nil;
+			}
+		});
+};
+var $elm$url$Url$Parser$slash = F2(
+	function (_v0, _v1) {
+		var parseBefore = _v0.a;
+		var parseAfter = _v1.a;
+		return $elm$url$Url$Parser$Parser(
+			function (state) {
+				return A2(
+					$elm$core$List$concatMap,
+					parseAfter,
+					parseBefore(state));
+			});
+	});
+var $elm$url$Url$Parser$top = $elm$url$Url$Parser$Parser(
+	function (state) {
+		return _List_fromArray(
+			[state]);
+	});
+var $author$project$Main$routeParser = $elm$url$Url$Parser$oneOf(
+	_List_fromArray(
+		[
+			A2($elm$url$Url$Parser$map, $author$project$Main$RouteDashboard, $elm$url$Url$Parser$top),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteCoinFlip,
+			$elm$url$Url$Parser$s('coinflip')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteRussianRoulette,
+			$elm$url$Url$Parser$s('roulette')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteRockPaperScissors,
+			$elm$url$Url$Parser$s('rps')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteCardMonte,
+			$elm$url$Url$Parser$s('monte')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteSlotMachine,
+			$elm$url$Url$Parser$s('slot')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteBlackjack,
+			$elm$url$Url$Parser$s('blackjack')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteWheelOfFortune,
+			$elm$url$Url$Parser$s('wheel')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteLeaderboard,
+			$elm$url$Url$Parser$s('leaderboard')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteShop,
+			$elm$url$Url$Parser$s('shop')),
+			A2(
+			$elm$url$Url$Parser$map,
+			$author$project$Main$RouteGamePlaceholder,
+			A2(
+				$elm$url$Url$Parser$slash,
+				$elm$url$Url$Parser$s('game'),
+				$elm$url$Url$Parser$int))
+		]));
+var $author$project$Types$Blackjack = {$: 'Blackjack'};
+var $author$project$Types$CardMonte = {$: 'CardMonte'};
+var $author$project$Types$CoinFlip = {$: 'CoinFlip'};
+var $author$project$Types$Dashboard = {$: 'Dashboard'};
+var $author$project$Types$GamePlaceholder = function (a) {
+	return {$: 'GamePlaceholder', a: a};
+};
+var $author$project$Types$Leaderboard = {$: 'Leaderboard'};
+var $author$project$Types$RockPaperScissors = {$: 'RockPaperScissors'};
+var $author$project$Types$RussianRoulette = {$: 'RussianRoulette'};
+var $author$project$Types$ShopPage = {$: 'ShopPage'};
+var $author$project$Types$SlotMachine = {$: 'SlotMachine'};
+var $author$project$Types$WheelOfFortune = {$: 'WheelOfFortune'};
+var $author$project$Main$routeToPage = function (route) {
+	switch (route.$) {
+		case 'RouteDashboard':
+			return $author$project$Types$Dashboard;
+		case 'RouteCoinFlip':
+			return $author$project$Types$CoinFlip;
+		case 'RouteRussianRoulette':
+			return $author$project$Types$RussianRoulette;
+		case 'RouteRockPaperScissors':
+			return $author$project$Types$RockPaperScissors;
+		case 'RouteCardMonte':
+			return $author$project$Types$CardMonte;
+		case 'RouteSlotMachine':
+			return $author$project$Types$SlotMachine;
+		case 'RouteBlackjack':
+			return $author$project$Types$Blackjack;
+		case 'RouteWheelOfFortune':
+			return $author$project$Types$WheelOfFortune;
+		case 'RouteLeaderboard':
+			return $author$project$Types$Leaderboard;
+		case 'RouteShop':
+			return $author$project$Types$ShopPage;
+		case 'RouteGamePlaceholder':
+			var id = route.a;
+			return $author$project$Types$GamePlaceholder(id);
+		default:
+			return $author$project$Types$Dashboard;
+	}
+};
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Main$init = F3(
+	function (_v0, url, key) {
+		var route = A2(
+			$elm$core$Maybe$withDefault,
+			$author$project$Main$RouteNotFound,
+			A2($elm$url$Url$Parser$parse, $author$project$Main$routeParser, url));
+		var page = $author$project$Main$routeToPage(route);
+		var _v1 = $author$project$WheelOfFortune$init;
+		var wheel = _v1.a;
+		var wheelCmd = _v1.b;
+		var _v2 = $author$project$SlotMachine$init;
+		var slot = _v2.a;
+		var slotCmd = _v2.b;
+		var _v3 = $author$project$Shop$init;
+		var shop = _v3.a;
+		var shopCmd = _v3.b;
+		var _v4 = $author$project$RockPaperScissors$init;
+		var rps = _v4.a;
+		var rpsCmd = _v4.b;
+		var _v5 = $author$project$RussianRoulette$init;
+		var roulette = _v5.a;
+		var rouletteCmd = _v5.b;
+		var _v6 = $author$project$CardMonte$init;
+		var monte = _v6.a;
+		var monteCmd = _v6.b;
+		var _v7 = $author$project$CoinFlip$init;
+		var coin = _v7.a;
+		var coinCmd = _v7.b;
+		var _v8 = $author$project$Blackjack$init;
+		var blackjack = _v8.a;
+		var bjCmd = _v8.b;
+		return _Utils_Tuple2(
+			{balance: 100, blackjack: blackjack, coin: coin, currentPage: page, dropdownValue: '', key: key, monte: monte, roulette: roulette, rps: rps, shop: shop, slot: slot, wheel: wheel},
+			$elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[
+						$author$project$Api$getScore($author$project$Main$GotInitialScore),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$CoinMsg, coinCmd),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$RouletteMsg, rouletteCmd),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$RpsMsg, rpsCmd),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$MonteMsg, monteCmd),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$SlotMsg, slotCmd),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$BjMsg, bjCmd),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$WheelMsg, wheelCmd),
+						A2($elm$core$Platform$Cmd$map, $author$project$Main$ShopMsg, shopCmd)
+					])));
+	});
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$map = _Platform_map;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
@@ -6912,11 +7312,37 @@ var $author$project$Main$subscriptions = function (model) {
 				$author$project$Blackjack$subscriptions(model.blackjack))
 			]));
 };
-var $author$project$Types$Leaderboard = {$: 'Leaderboard'};
 var $author$project$Main$ScorePosted = function (a) {
 	return {$: 'ScorePosted', a: a};
 };
-var $author$project$Types$ShopPage = {$: 'ShopPage'};
+var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $author$project$Main$pageToRoute = function (page) {
+	switch (page.$) {
+		case 'Dashboard':
+			return '/';
+		case 'CoinFlip':
+			return '/coinflip';
+		case 'RussianRoulette':
+			return '/roulette';
+		case 'RockPaperScissors':
+			return '/rps';
+		case 'CardMonte':
+			return '/monte';
+		case 'SlotMachine':
+			return '/slot';
+		case 'Blackjack':
+			return '/blackjack';
+		case 'WheelOfFortune':
+			return '/wheel';
+		case 'Leaderboard':
+			return '/leaderboard';
+		case 'ShopPage':
+			return '/shop';
+		default:
+			var id = page.a;
+			return '/game/' + $elm$core$String$fromInt(id);
+	}
+};
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$http$Http$jsonBody = function (value) {
 	return A2(
@@ -6960,6 +7386,51 @@ var $author$project$Api$postScore = F2(
 				url: $author$project$Api$apiUrl
 			});
 	});
+var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
+var $elm$url$Url$addPort = F2(
+	function (maybePort, starter) {
+		if (maybePort.$ === 'Nothing') {
+			return starter;
+		} else {
+			var port_ = maybePort.a;
+			return starter + (':' + $elm$core$String$fromInt(port_));
+		}
+	});
+var $elm$url$Url$addPrefixed = F3(
+	function (prefix, maybeSegment, starter) {
+		if (maybeSegment.$ === 'Nothing') {
+			return starter;
+		} else {
+			var segment = maybeSegment.a;
+			return _Utils_ap(
+				starter,
+				_Utils_ap(prefix, segment));
+		}
+	});
+var $elm$url$Url$toString = function (url) {
+	var http = function () {
+		var _v0 = url.protocol;
+		if (_v0.$ === 'Http') {
+			return 'http://';
+		} else {
+			return 'https://';
+		}
+	}();
+	return A3(
+		$elm$url$Url$addPrefixed,
+		'#',
+		url.fragment,
+		A3(
+			$elm$url$Url$addPrefixed,
+			'?',
+			url.query,
+			_Utils_ap(
+				A2(
+					$elm$url$Url$addPort,
+					url.port_,
+					_Utils_ap(http, url.host)),
+				url.path)));
+};
 var $author$project$Types$BjDealerTurn = {$: 'BjDealerTurn'};
 var $author$project$Types$BjPlayerBusted = {$: 'BjPlayerBusted'};
 var $author$project$Blackjack$PlayerDrew = function (a) {
@@ -7210,15 +7681,6 @@ var $author$project$Utils$randomShuffleType = A2(
 	_List_fromArray(
 		[$author$project$Types$SwapMiddleRight, $author$project$Types$SwapLeftRight, $author$project$Types$RotateClockwise]));
 var $elm$core$Process$sleep = _Process_sleep;
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
 var $author$project$CardMonte$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -7865,6 +8327,120 @@ var $author$project$WheelOfFortune$update = F2(
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
+			case 'LinkClicked':
+				var urlRequest = msg.a;
+				if (urlRequest.$ === 'Internal') {
+					var url = urlRequest.a;
+					return _Utils_Tuple2(
+						model,
+						A2(
+							$elm$browser$Browser$Navigation$pushUrl,
+							model.key,
+							$elm$url$Url$toString(url)));
+				} else {
+					var href = urlRequest.a;
+					return _Utils_Tuple2(
+						model,
+						$elm$browser$Browser$Navigation$load(href));
+				}
+			case 'UrlChanged':
+				var url = msg.a;
+				var route = A2(
+					$elm$core$Maybe$withDefault,
+					$author$project$Main$RouteNotFound,
+					A2($elm$url$Url$Parser$parse, $author$project$Main$routeParser, url));
+				var page = $author$project$Main$routeToPage(route);
+				var newModel = _Utils_update(
+					model,
+					{currentPage: page, dropdownValue: ''});
+				switch (page.$) {
+					case 'RussianRoulette':
+						var _v3 = $author$project$RussianRoulette$init;
+						var newRoulette = _v3.a;
+						var rouletteCmd = _v3.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								newModel,
+								{roulette: newRoulette}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$RouletteMsg, rouletteCmd));
+					case 'RockPaperScissors':
+						var _v4 = $author$project$RockPaperScissors$init;
+						var newRps = _v4.a;
+						var rpsCmd = _v4.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								newModel,
+								{rps: newRps}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$RpsMsg, rpsCmd));
+					case 'CardMonte':
+						var _v5 = $author$project$CardMonte$init;
+						var newMonte = _v5.a;
+						var monteCmd = _v5.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								newModel,
+								{monte: newMonte}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$MonteMsg, monteCmd));
+					case 'SlotMachine':
+						var _v6 = $author$project$SlotMachine$init;
+						var newSlot = _v6.a;
+						var slotCmd = _v6.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								newModel,
+								{slot: newSlot}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$SlotMsg, slotCmd));
+					case 'Blackjack':
+						var _v7 = $author$project$Blackjack$init;
+						var newBlackjack = _v7.a;
+						var bjCmd = _v7.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								newModel,
+								{blackjack: newBlackjack}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$BjMsg, bjCmd));
+					case 'WheelOfFortune':
+						var _v8 = $author$project$WheelOfFortune$init;
+						var newWheel = _v8.a;
+						var wheelCmd = _v8.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								newModel,
+								{wheel: newWheel}),
+							A2($elm$core$Platform$Cmd$map, $author$project$Main$WheelMsg, wheelCmd));
+					default:
+						return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
+				}
+			case 'NavigateTo':
+				var page = msg.a;
+				var path = $author$project$Main$pageToRoute(page);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currentPage: page, dropdownValue: ''}),
+					A2($elm$browser$Browser$Navigation$pushUrl, model.key, path));
+			case 'SelectDropdown':
+				var val = msg.a;
+				switch (val) {
+					case 'leaderboard':
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{currentPage: $author$project$Types$Leaderboard, dropdownValue: ''}),
+							A2($elm$browser$Browser$Navigation$pushUrl, model.key, '/leaderboard'));
+					case 'shop':
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{currentPage: $author$project$Types$ShopPage, dropdownValue: ''}),
+							A2($elm$browser$Browser$Navigation$pushUrl, model.key, '/shop'));
+					default:
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{dropdownValue: ''}),
+							$elm$core$Platform$Cmd$none);
+				}
 			case 'GotInitialScore':
 				var result = msg.a;
 				if (result.$ === 'Ok') {
@@ -7889,41 +8465,12 @@ var $author$project$Main$update = F2(
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
-			case 'NavigateTo':
-				var page = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{currentPage: page, dropdownValue: ''}),
-					$elm$core$Platform$Cmd$none);
-			case 'SelectDropdown':
-				var val = msg.a;
-				switch (val) {
-					case 'leaderboard':
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{currentPage: $author$project$Types$Leaderboard, dropdownValue: ''}),
-							$elm$core$Platform$Cmd$none);
-					case 'shop':
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{currentPage: $author$project$Types$ShopPage, dropdownValue: ''}),
-							$elm$core$Platform$Cmd$none);
-					default:
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{dropdownValue: ''}),
-							$elm$core$Platform$Cmd$none);
-				}
 			case 'CoinMsg':
 				var subMsg = msg.a;
-				var _v4 = A2($author$project$CoinFlip$update, subMsg, model.coin);
-				var newCoin = _v4.a;
-				var coinCmd = _v4.b;
-				var balanceChange = _v4.c;
+				var _v12 = A2($author$project$CoinFlip$update, subMsg, model.coin);
+				var newCoin = _v12.a;
+				var coinCmd = _v12.b;
+				var balanceChange = _v12.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -7936,10 +8483,10 @@ var $author$project$Main$update = F2(
 							])));
 			case 'RouletteMsg':
 				var subMsg = msg.a;
-				var _v5 = A2($author$project$RussianRoulette$update, subMsg, model.roulette);
-				var newRoulette = _v5.a;
-				var rouletteCmd = _v5.b;
-				var balanceChange = _v5.c;
+				var _v13 = A2($author$project$RussianRoulette$update, subMsg, model.roulette);
+				var newRoulette = _v13.a;
+				var rouletteCmd = _v13.b;
+				var balanceChange = _v13.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -7952,10 +8499,10 @@ var $author$project$Main$update = F2(
 							])));
 			case 'RpsMsg':
 				var subMsg = msg.a;
-				var _v6 = A2($author$project$RockPaperScissors$update, subMsg, model.rps);
-				var newRps = _v6.a;
-				var rpsCmd = _v6.b;
-				var balanceChange = _v6.c;
+				var _v14 = A2($author$project$RockPaperScissors$update, subMsg, model.rps);
+				var newRps = _v14.a;
+				var rpsCmd = _v14.b;
+				var balanceChange = _v14.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -7968,10 +8515,10 @@ var $author$project$Main$update = F2(
 							])));
 			case 'MonteMsg':
 				var subMsg = msg.a;
-				var _v7 = A2($author$project$CardMonte$update, subMsg, model.monte);
-				var newMonte = _v7.a;
-				var monteCmd = _v7.b;
-				var balanceChange = _v7.c;
+				var _v15 = A2($author$project$CardMonte$update, subMsg, model.monte);
+				var newMonte = _v15.a;
+				var monteCmd = _v15.b;
+				var balanceChange = _v15.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -7984,10 +8531,10 @@ var $author$project$Main$update = F2(
 							])));
 			case 'SlotMsg':
 				var subMsg = msg.a;
-				var _v8 = A2($author$project$SlotMachine$update, subMsg, model.slot);
-				var newSlot = _v8.a;
-				var slotCmd = _v8.b;
-				var balanceChange = _v8.c;
+				var _v16 = A2($author$project$SlotMachine$update, subMsg, model.slot);
+				var newSlot = _v16.a;
+				var slotCmd = _v16.b;
+				var balanceChange = _v16.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -8000,10 +8547,10 @@ var $author$project$Main$update = F2(
 							])));
 			case 'BjMsg':
 				var subMsg = msg.a;
-				var _v9 = A2($author$project$Blackjack$update, subMsg, model.blackjack);
-				var newBj = _v9.a;
-				var bjCmd = _v9.b;
-				var balanceChange = _v9.c;
+				var _v17 = A2($author$project$Blackjack$update, subMsg, model.blackjack);
+				var newBj = _v17.a;
+				var bjCmd = _v17.b;
+				var balanceChange = _v17.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -8016,10 +8563,10 @@ var $author$project$Main$update = F2(
 							])));
 			case 'WheelMsg':
 				var subMsg = msg.a;
-				var _v10 = A2($author$project$WheelOfFortune$update, subMsg, model.wheel);
-				var newWheel = _v10.a;
-				var wheelCmd = _v10.b;
-				var balanceChange = _v10.c;
+				var _v18 = A2($author$project$WheelOfFortune$update, subMsg, model.wheel);
+				var newWheel = _v18.a;
+				var wheelCmd = _v18.b;
+				var balanceChange = _v18.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -8032,10 +8579,10 @@ var $author$project$Main$update = F2(
 							])));
 			default:
 				var subMsg = msg.a;
-				var _v11 = A2($author$project$Shop$update, subMsg, model.shop);
-				var newShop = _v11.a;
-				var shopCmd = _v11.b;
-				var balanceChange = _v11.c;
+				var _v19 = A2($author$project$Shop$update, subMsg, model.shop);
+				var newShop = _v19.a;
+				var shopCmd = _v19.b;
+				var balanceChange = _v19.c;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -8072,6 +8619,33 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
 };
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $author$project$Main$pageTitle = function (page) {
+	switch (page.$) {
+		case 'Dashboard':
+			return 'Startseite';
+		case 'CoinFlip':
+			return 'Drehmünze';
+		case 'RussianRoulette':
+			return 'Russisch Roulette';
+		case 'RockPaperScissors':
+			return 'Schere Stein Papier';
+		case 'CardMonte':
+			return 'Find the Lady';
+		case 'SlotMachine':
+			return 'Einarmiger Bandit';
+		case 'Blackjack':
+			return 'Blackjack';
+		case 'WheelOfFortune':
+			return 'Glücksrad';
+		case 'Leaderboard':
+			return 'Bestenliste';
+		case 'ShopPage':
+			return 'Shop';
+		default:
+			var id = page.a;
+			return 'Spiel ' + $elm$core$String$fromInt(id);
+	}
+};
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
@@ -9678,19 +10252,9 @@ var $author$project$WheelOfFortune$view = function (model) {
 					]))
 			]));
 };
-var $author$project$Types$Blackjack = {$: 'Blackjack'};
-var $author$project$Types$CardMonte = {$: 'CardMonte'};
-var $author$project$Types$CoinFlip = {$: 'CoinFlip'};
-var $author$project$Types$GamePlaceholder = function (a) {
-	return {$: 'GamePlaceholder', a: a};
-};
 var $author$project$Main$NavigateTo = function (a) {
 	return {$: 'NavigateTo', a: a};
 };
-var $author$project$Types$RockPaperScissors = {$: 'RockPaperScissors'};
-var $author$project$Types$RussianRoulette = {$: 'RussianRoulette'};
-var $author$project$Types$SlotMachine = {$: 'SlotMachine'};
-var $author$project$Types$WheelOfFortune = {$: 'WheelOfFortune'};
 var $author$project$Main$viewDashboard = A2(
 	$elm$html$Html$div,
 	_List_Nil,
@@ -10129,40 +10693,46 @@ var $author$project$Main$viewTopBar = function (model) {
 			]));
 };
 var $author$project$Main$view = function (model) {
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
+	return {
+		body: _List_fromArray(
 			[
-				A2($elm$html$Html$Attributes$style, 'width', '100vw'),
-				A2($elm$html$Html$Attributes$style, 'height', '100vh'),
-				A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-				A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
-				A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
-				A2($elm$html$Html$Attributes$style, 'position', 'relative')
-			]),
-		_List_fromArray(
-			[
-				$author$project$Main$viewTopBar(model),
 				A2(
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$classList(
-						_List_fromArray(
-							[
-								_Utils_Tuple2('game-container', true),
-								_Utils_Tuple2(
-								'dashboard-active',
-								_Utils_eq(model.currentPage, $author$project$Types$Dashboard))
-							]))
+						A2($elm$html$Html$Attributes$style, 'width', '100vw'),
+						A2($elm$html$Html$Attributes$style, 'height', '100vh'),
+						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+						A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
+						A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
+						A2($elm$html$Html$Attributes$style, 'position', 'relative')
 					]),
 				_List_fromArray(
 					[
-						$author$project$Main$viewPage(model)
+						$author$project$Main$viewTopBar(model),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('game-container', true),
+										_Utils_Tuple2(
+										'dashboard-active',
+										_Utils_eq(model.currentPage, $author$project$Types$Dashboard))
+									]))
+							]),
+						_List_fromArray(
+							[
+								$author$project$Main$viewPage(model)
+							]))
 					]))
-			]));
+			]),
+		title: 'Casino 161 - ' + $author$project$Main$pageTitle(model.currentPage)
+	};
 };
-var $author$project$Main$main = $elm$browser$Browser$element(
-	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
+var $author$project$Main$main = $elm$browser$Browser$application(
+	{init: $author$project$Main$init, onUrlChange: $author$project$Main$UrlChanged, onUrlRequest: $author$project$Main$LinkClicked, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));

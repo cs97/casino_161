@@ -13,6 +13,8 @@ import Time
 import Types exposing (..)
 import Utils exposing (wheelSectors)
 
+-- MODEL
+
 type alias Model =
     { state : WheelState
     , rotation : Float
@@ -25,6 +27,8 @@ init =
       }
     , Cmd.none
     )
+
+-- UPDATE
 
 type Msg
     = StartSpin
@@ -86,9 +90,13 @@ update msg model =
             , payout
             )
 
+-- SUBSCRIPTIONS
+
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.none
+
+-- VIEW
 
 renderWheelSector : WheelSector -> Svg Msg
 renderWheelSector sector =
@@ -145,4 +153,51 @@ view model =
                 WheelIdle ->
                     "Drehe das Rad für 20 € und gewinne fette Preise!"
 
-               
+                WheelSpinning ->
+                    "Das Rad rotiert wild... Wo bleibt es stehen?!"
+
+                WheelResult sector ->
+                    if sector.multiplier == 0.0 then
+                        "😢 Schade! Das war leider eine Niete."
+                    else
+                        "🎉 Glückwunsch! Multiplikator " ++ sector.label ++ " getroffen!"
+
+        isSpinning =
+            model.state == WheelSpinning
+    in
+    div [ class "wheel-game-wrapper" ]
+        [ h2 [] [ text "🎡 Lucky SVG Wheel" ]
+        , div [ class "roulette-status" ] [ text statusText ]
+
+        -- DAS HOCHWERTIGE SVG GLÜCKSRAD
+        , div [ class "wheel-stage" ]
+            [ svg
+                [ viewBox "0 0 300 300"
+                , Svg.Attributes.width "320"
+                , Svg.Attributes.height "320"
+                ]
+                [ -- 1. Der rotierende Teil (g = Group-Element)
+                  g
+                    [ transform ("rotate(" ++ String.fromFloat model.rotation ++ ", 150, 150)")
+                    , Svg.Attributes.style "transition: transform 3s cubic-bezier(0.1, 0.8, 0.2, 1);"
+                    ]
+                    (List.map renderWheelSector wheelSectors)
+
+                -- 2. Der statische Stopper/Pfeil oben (zeigt auf 270 Grad / Top Center)
+                , polygon [ Svg.Attributes.points "150,22 140,2 160,2", fill "#ffffff", stroke "#000000", strokeWidth "2" ] []
+                , circle [ cx "150", cy "150", r "12", fill "#ffffff", stroke "#333", strokeWidth "3" ] []
+                ]
+            ]
+        , button
+            [ class "btn action-btn wheel-spin-btn"
+            , onClick StartSpin
+            , disabled (isSpinning)
+            ]
+            [ text
+                (if isSpinning then
+                    "Glücksrad dreht..."
+                 else
+                    "Für 20€ DREHEN!"
+                )
+            ]
+        ]

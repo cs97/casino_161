@@ -6581,7 +6581,7 @@ var $author$project$SlotMachine$init = _Utils_Tuple2(
 	$elm$core$Platform$Cmd$none);
 var $author$project$Types$WheelIdle = {$: 'WheelIdle'};
 var $author$project$WheelOfFortune$init = _Utils_Tuple2(
-	{rotation: 0.0, state: $author$project$Types$WheelIdle},
+	{rotation: 0.0, sectorCount: 8, state: $author$project$Types$WheelIdle},
 	$elm$core$Platform$Cmd$none);
 var $elm$core$Platform$Cmd$map = _Platform_map;
 var $author$project$Main$init = function (_v0) {
@@ -7753,18 +7753,53 @@ var $author$project$Types$WheelResult = function (a) {
 	return {$: 'WheelResult', a: a};
 };
 var $author$project$Types$WheelSpinning = {$: 'WheelSpinning'};
+var $author$project$WheelOfFortune$getDynamicSectors = function (count) {
+	switch (count) {
+		case 10:
+			return _List_fromArray(
+				[
+					{color: '#ffcc00', id: 0, label: 'JACKPOT', multiplier: 8.5, textCol: '#000'},
+					{color: '#d9534f', id: 1, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#5cb85c', id: 2, label: '2x GEWINN', multiplier: 2.0, textCol: '#fff'},
+					{color: '#d9534f', id: 3, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#f0ad4e', id: 4, label: '3x GEWINN', multiplier: 3.0, textCol: '#fff'},
+					{color: '#d9534f', id: 5, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#5bc0de', id: 6, label: '4x GEWINN', multiplier: 4.0, textCol: '#fff'},
+					{color: '#d9534f', id: 7, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#9b59b6', id: 8, label: '5x GEWINN', multiplier: 5.0, textCol: '#fff'},
+					{color: '#d9534f', id: 9, label: 'NIETE', multiplier: 0.0, textCol: '#fff'}
+				]);
+		case 12:
+			return _List_fromArray(
+				[
+					{color: '#ffcc00', id: 0, label: 'MEGA JACKPOT', multiplier: 10.0, textCol: '#000'},
+					{color: '#d9534f', id: 1, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#5cb85c', id: 2, label: '2x GEWINN', multiplier: 2.0, textCol: '#fff'},
+					{color: '#d9534f', id: 3, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#f0ad4e', id: 4, label: '3x GEWINN', multiplier: 3.0, textCol: '#fff'},
+					{color: '#d9534f', id: 5, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#5bc0de', id: 6, label: '4x GEWINN', multiplier: 4.0, textCol: '#fff'},
+					{color: '#d9534f', id: 7, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#9b59b6', id: 8, label: '5x GEWINN', multiplier: 5.0, textCol: '#fff'},
+					{color: '#d9534f', id: 9, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#1abc9c', id: 10, label: '6x GEWINN', multiplier: 6.0, textCol: '#fff'},
+					{color: '#d9534f', id: 11, label: 'NIETE', multiplier: 0.0, textCol: '#fff'}
+				]);
+		default:
+			return _List_fromArray(
+				[
+					{color: '#ffcc00', id: 0, label: 'JACKPOT', multiplier: 7.5, textCol: '#000'},
+					{color: '#d9534f', id: 1, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#5cb85c', id: 2, label: '2x GEWINN', multiplier: 2.0, textCol: '#fff'},
+					{color: '#d9534f', id: 3, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#f0ad4e', id: 4, label: '3x GEWINN', multiplier: 3.0, textCol: '#fff'},
+					{color: '#d9534f', id: 5, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
+					{color: '#5bc0de', id: 6, label: '4x GEWINN', multiplier: 4.0, textCol: '#fff'},
+					{color: '#d9534f', id: 7, label: 'NIETE', multiplier: 0.0, textCol: '#fff'}
+				]);
+	}
+};
 var $elm$core$Basics$round = _Basics_round;
-var $author$project$Utils$wheelSectors = _List_fromArray(
-	[
-		{color: '#ffcc00', id: 0, label: 'JACKPOT', multiplier: 7.5, textCol: '#000'},
-		{color: '#d9534f', id: 1, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
-		{color: '#5cb85c', id: 2, label: '2x GEWINN', multiplier: 2.0, textCol: '#fff'},
-		{color: '#d9534f', id: 3, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
-		{color: '#f0ad4e', id: 4, label: '3x GEWINN', multiplier: 3.0, textCol: '#fff'},
-		{color: '#d9534f', id: 5, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
-		{color: '#5bc0de', id: 6, label: '4x GEWINN', multiplier: 4.0, textCol: '#fff'},
-		{color: '#d9534f', id: 7, label: 'NIETE', multiplier: 0.0, textCol: '#fff'}
-	]);
 var $author$project$WheelOfFortune$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -7776,10 +7811,19 @@ var $author$project$WheelOfFortune$update = F2(
 					A2(
 						$elm$random$Random$generate,
 						$author$project$WheelOfFortune$CalculateResult,
-						A2($elm$random$Random$int, 0, 7)),
+						A2($elm$random$Random$int, 0, model.sectorCount - 1)),
 					-20);
+			case 'ChangeSectorCount':
+				var newCount = msg.a;
+				return _Utils_eq(model.state, $author$project$Types$WheelSpinning) ? _Utils_Tuple3(model, $elm$core$Platform$Cmd$none, 0) : _Utils_Tuple3(
+					_Utils_update(
+						model,
+						{rotation: 0.0, sectorCount: newCount, state: $author$project$Types$WheelIdle}),
+					$elm$core$Platform$Cmd$none,
+					0);
 			case 'CalculateResult':
 				var targetSectorId = msg.a;
+				var sectors = $author$project$WheelOfFortune$getDynamicSectors(model.sectorCount);
 				var selectedSector = A2(
 					$elm$core$Maybe$withDefault,
 					{color: '#d9534f', id: 1, label: 'NIETE', multiplier: 0.0, textCol: '#fff'},
@@ -7789,8 +7833,8 @@ var $author$project$WheelOfFortune$update = F2(
 							function (s) {
 								return _Utils_eq(s.id, targetSectorId);
 							},
-							$author$project$Utils$wheelSectors)));
-				var sectorAngle = 45.0;
+							sectors)));
+				var sectorAngle = 360.0 / model.sectorCount;
 				var targetAngle = (270.0 - (targetSectorId * sectorAngle)) - (sectorAngle / 2.0);
 				var baseSpin = 2160.0;
 				var finalRotation = (model.rotation + baseSpin) + (targetAngle - (model.rotation - ((($elm$core$Basics$floor(model.rotation) / 360) | 0) * 360.0)));
@@ -9357,6 +9401,9 @@ var $author$project$SlotMachine$view = function (model) {
 					]))
 			]));
 };
+var $author$project$WheelOfFortune$ChangeSectorCount = function (a) {
+	return {$: 'ChangeSectorCount', a: a};
+};
 var $author$project$WheelOfFortune$StartSpin = {$: 'StartSpin'};
 var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$circle = $elm$svg$Svg$trustedNode('circle');
@@ -9383,61 +9430,64 @@ var $elm$svg$Svg$text_ = $elm$svg$Svg$trustedNode('text');
 var $elm$svg$Svg$Attributes$transform = _VirtualDom_attribute('transform');
 var $elm$svg$Svg$Attributes$x = _VirtualDom_attribute('x');
 var $elm$svg$Svg$Attributes$y = _VirtualDom_attribute('y');
-var $author$project$WheelOfFortune$renderWheelSector = function (sector) {
-	var startAngle = sector.id * 45.0;
-	var textAngle = startAngle + 22.5;
-	var rad = function (angle) {
-		return (angle * $elm$core$Basics$pi) / 180.0;
-	};
-	var rRadius = 130.0;
-	var x1 = $elm$core$String$fromFloat(
-		150.0 + (rRadius * $elm$core$Basics$cos(
-			rad(startAngle))));
-	var y1 = $elm$core$String$fromFloat(
-		150.0 + (rRadius * $elm$core$Basics$sin(
-			rad(startAngle))));
-	var endAngle = startAngle + 45.0;
-	var x2 = $elm$core$String$fromFloat(
-		150.0 + (rRadius * $elm$core$Basics$cos(
-			rad(endAngle))));
-	var y2 = $elm$core$String$fromFloat(
-		150.0 + (rRadius * $elm$core$Basics$sin(
-			rad(endAngle))));
-	var pathData = 'M 150 150 L ' + (x1 + (' ' + (y1 + (' A 130 130 0 0 1 ' + (x2 + (' ' + (y2 + ' Z')))))));
-	return A2(
-		$elm$svg$Svg$g,
-		_List_Nil,
-		_List_fromArray(
-			[
-				A2(
-				$elm$svg$Svg$path,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$d(pathData),
-						$elm$svg$Svg$Attributes$fill(sector.color),
-						$elm$svg$Svg$Attributes$stroke('#222222'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$text_,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x('235'),
-						$elm$svg$Svg$Attributes$y('154'),
-						$elm$svg$Svg$Attributes$fill(sector.textCol),
-						$elm$svg$Svg$Attributes$fontSize('9'),
-						$elm$svg$Svg$Attributes$textAnchor('end'),
-						$elm$svg$Svg$Attributes$transform(
-						'rotate(' + ($elm$core$String$fromFloat(textAngle) + ', 150, 150)')),
-						$elm$svg$Svg$Attributes$style('font-weight: bold; font-family: sans-serif;')
-					]),
-				_List_fromArray(
-					[
-						$elm$svg$Svg$text(sector.label)
-					]))
-			]));
-};
+var $author$project$WheelOfFortune$renderWheelSector = F2(
+	function (totalCount, sector) {
+		var sectorAngle = 360.0 / totalCount;
+		var startAngle = sector.id * sectorAngle;
+		var textAngle = startAngle + (sectorAngle / 2.0);
+		var rad = function (angle) {
+			return (angle * $elm$core$Basics$pi) / 180.0;
+		};
+		var rRadius = 130.0;
+		var x1 = $elm$core$String$fromFloat(
+			150.0 + (rRadius * $elm$core$Basics$cos(
+				rad(startAngle))));
+		var y1 = $elm$core$String$fromFloat(
+			150.0 + (rRadius * $elm$core$Basics$sin(
+				rad(startAngle))));
+		var fSize = (totalCount > 8) ? '7' : '9';
+		var endAngle = startAngle + sectorAngle;
+		var x2 = $elm$core$String$fromFloat(
+			150.0 + (rRadius * $elm$core$Basics$cos(
+				rad(endAngle))));
+		var y2 = $elm$core$String$fromFloat(
+			150.0 + (rRadius * $elm$core$Basics$sin(
+				rad(endAngle))));
+		var pathData = 'M 150 150 L ' + (x1 + (' ' + (y1 + (' A 130 130 0 0 1 ' + (x2 + (' ' + (y2 + ' Z')))))));
+		return A2(
+			$elm$svg$Svg$g,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$svg$Svg$path,
+					_List_fromArray(
+						[
+							$elm$svg$Svg$Attributes$d(pathData),
+							$elm$svg$Svg$Attributes$fill(sector.color),
+							$elm$svg$Svg$Attributes$stroke('#222222'),
+							$elm$svg$Svg$Attributes$strokeWidth('2')
+						]),
+					_List_Nil),
+					A2(
+					$elm$svg$Svg$text_,
+					_List_fromArray(
+						[
+							$elm$svg$Svg$Attributes$x('235'),
+							$elm$svg$Svg$Attributes$y('153'),
+							$elm$svg$Svg$Attributes$fill(sector.textCol),
+							$elm$svg$Svg$Attributes$fontSize(fSize),
+							$elm$svg$Svg$Attributes$textAnchor('end'),
+							$elm$svg$Svg$Attributes$transform(
+							'rotate(' + ($elm$core$String$fromFloat(textAngle) + ', 150, 150)')),
+							$elm$svg$Svg$Attributes$style('font-weight: bold; font-family: sans-serif;')
+						]),
+					_List_fromArray(
+						[
+							$elm$svg$Svg$text(sector.label)
+						]))
+				]));
+	});
 var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode('svg');
 var $elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var $elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
@@ -9454,6 +9504,7 @@ var $author$project$WheelOfFortune$view = function (model) {
 				return (sector.multiplier === 0.0) ? '😢 Schade! Das war leider eine Niete.' : ('🎉 Glückwunsch! Multiplikator ' + (sector.label + ' getroffen!'));
 		}
 	}();
+	var sectors = $author$project$WheelOfFortune$getDynamicSectors(model.sectorCount);
 	var isSpinning = _Utils_eq(model.state, $author$project$Types$WheelSpinning);
 	return A2(
 		$elm$html$Html$div,
@@ -9484,6 +9535,84 @@ var $author$project$WheelOfFortune$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
+						A2($elm$html$Html$Attributes$style, 'margin', '15px 0'),
+						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+						A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
+						A2($elm$html$Html$Attributes$style, 'gap', '10px')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$span,
+						_List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'align-self', 'center'),
+								A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
+								A2($elm$html$Html$Attributes$style, 'color', '#fff')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Felder wechseln: ')
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('btn', true),
+										_Utils_Tuple2('active', model.sectorCount === 8)
+									])),
+								$elm$html$Html$Events$onClick(
+								$author$project$WheelOfFortune$ChangeSectorCount(8)),
+								$elm$html$Html$Attributes$disabled(isSpinning)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('8 Segmente')
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('btn', true),
+										_Utils_Tuple2('active', model.sectorCount === 10)
+									])),
+								$elm$html$Html$Events$onClick(
+								$author$project$WheelOfFortune$ChangeSectorCount(10)),
+								$elm$html$Html$Attributes$disabled(isSpinning)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('10 Segmente')
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('btn', true),
+										_Utils_Tuple2('active', model.sectorCount === 12)
+									])),
+								$elm$html$Html$Events$onClick(
+								$author$project$WheelOfFortune$ChangeSectorCount(12)),
+								$elm$html$Html$Attributes$disabled(isSpinning)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('12 Segmente')
+							]))
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
 						$elm$html$Html$Attributes$class('wheel-stage')
 					]),
 				_List_fromArray(
@@ -9506,7 +9635,10 @@ var $author$project$WheelOfFortune$view = function (model) {
 										'rotate(' + ($elm$core$String$fromFloat(model.rotation) + ', 150, 150)')),
 										$elm$svg$Svg$Attributes$style('transition: transform 3s cubic-bezier(0.1, 0.8, 0.2, 1);')
 									]),
-								A2($elm$core$List$map, $author$project$WheelOfFortune$renderWheelSector, $author$project$Utils$wheelSectors)),
+								A2(
+									$elm$core$List$map,
+									$author$project$WheelOfFortune$renderWheelSector(model.sectorCount),
+									sectors)),
 								A2(
 								$elm$svg$Svg$polygon,
 								_List_fromArray(

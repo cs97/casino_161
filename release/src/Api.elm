@@ -7,9 +7,9 @@ import Json.Encode as Encode
 
 apiUrl : String
 apiUrl =
-    --"http://chrswr.de:3030/score/spieler1"
     "/score/spieler1"
 
+-- Erwartet JSON: { "score": Int }
 getScore : (Result Http.Error Int -> msg) -> Cmd msg
 getScore toMsg =
     Http.get
@@ -17,6 +17,7 @@ getScore toMsg =
         , expect = Http.expectJson toMsg (Decode.field "score" Decode.int)
         }
 
+-- Sendet JSON: { "score": Int }
 postScore : Int -> (Result Http.Error Int -> msg) -> Cmd msg
 postScore neuerScore toMsg =
     Http.post
